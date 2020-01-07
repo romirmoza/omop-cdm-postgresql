@@ -1,0 +1,298 @@
+/*********************************************************************************
+# Copyright 2018-08 Observational Health Data Sciences and Informatics
+#
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+********************************************************************************/
+
+/************************
+
+ ####### #     # ####### ######      #####  ######  #     #            #####        ###
+ #     # ##   ## #     # #     #    #     # #     # ##   ##    #    # #     #      #   #
+ #     # # # # # #     # #     #    #       #     # # # # #    #    # #           #     #
+ #     # #  #  # #     # ######     #       #     # #  #  #    #    # ######      #     #
+ #     # #     # #     # #          #       #     # #     #    #    # #     # ### #     #
+ #     # #     # #     # #          #     # #     # #     #     #  #  #     # ###  #   #
+ ####### #     # ####### #           #####  ######  #     #      ##    #####  ###   ###
+
+postgresql script to create OMOP common data model version 6.0
+
+last revised: 27-Aug-2018
+
+Authors:  Patrick Ryan, Christian Reich, Clair Blacketer
+
+
+*************************/
+
+
+/************************
+
+Standardized vocabulary
+
+************************/
+
+
+--HINT DISTRIBUTE ON RANDOM
+CREATE TABLE concept (
+  concept_id			INTEGER			NOT NULL ,
+  concept_name			VARCHAR(2000)	NOT NULL ,
+  domain_id				VARCHAR(20)		NULL ,
+  vocabulary_id			VARCHAR(20)		NOT NULL ,
+  table_name   			VARCHAR(20)		NOT NULL ,
+  concept_class_id		VARCHAR(20)		NULL ,
+  standard_concept		VARCHAR(1)		NULL ,
+  concept_code			VARCHAR(50)		NULL ,
+  valid_start_date		DATE			NULL ,
+  valid_end_date		DATE			NULL ,
+  invalid_reason		VARCHAR(1)		NULL
+)
+;
+
+
+/**************************
+
+Standardized meta-data
+
+***************************/
+
+
+/************************
+
+Standardized clinical data
+
+************************/
+
+
+--HINT DISTRIBUTE_ON_KEY(person_id)
+CREATE TABLE person
+(
+  person_id						BIGINT	  	NOT NULL ,
+  gender_concept_id				INTEGER	  	NOT NULL ,
+  year_of_birth					FLOAT	  	NULL ,
+  month_of_birth				INTEGER	  	NULL,
+  day_of_birth					INTEGER	  	NULL,
+  birth_datetime				TIMESTAMP	NULL,
+  race_concept_id				FLOAT		NULL,
+  ethnicity_concept_id			FLOAT	  	NULL,
+  location_id					BIGINT		NULL,
+  provider_id					BIGINT		NULL,
+  care_site_id					BIGINT		NULL,
+  person_source_value			VARCHAR(50)	NULL,
+  gender_source_value			VARCHAR(50) NULL,
+  gender_source_concept_id	  	INTEGER		NULL,
+  race_source_value				VARCHAR(50) NULL,
+  race_source_concept_id		INTEGER		NULL,
+  ethnicity_source_value		VARCHAR(50) NULL,
+  ethnicity_source_concept_id	INTEGER		NULL
+)
+;
+
+
+--HINT DISTRIBUTE_ON_KEY(person_id)
+CREATE TABLE death
+(
+  person_id						BIGINT	  	NOT NULL ,
+  death_date				    DATE	  	NOT NULL ,
+  death_datetime				TIMESTAMP  	NULL ,
+  death_type_concept_id	    	INTEGER	  	NULL,
+  cause_concept_id				INTEGER	  	NULL,
+  cause_source_value			INTEGER 	NULL,
+  cause_source_concept_id       INTEGER     NULL
+)
+;
+
+
+--HINT DISTRIBUTE_ON_KEY(person_id)
+CREATE TABLE observation_period
+(
+  observation_period_id				BIGINT		NOT NULL ,
+  person_id							BIGINT		NOT NULL ,
+  observation_period_start_date		DATE		NOT NULL ,
+  observation_period_end_date		DATE		NULL ,
+  period_type_concept_id			INTEGER		NOT NULL
+)
+;
+
+
+--HINT DISTRIBUTE_ON_KEY(person_id)
+CREATE TABLE visit_occurrence
+(
+  visit_occurrence_id			BIGINT			NOT NULL ,
+  person_id						FLOAT			NOT NULL ,
+  visit_concept_id				INTEGER			NOT NULL ,
+  visit_start_date				DATE			NULL ,
+  visit_start_datetime			TIMESTAMP		NOT NULL ,
+  visit_end_date				DATE			NULL ,
+  visit_end_datetime			TIMESTAMP		NULL ,
+  visit_type_concept_id			INTEGER			NOT NULL ,
+  provider_id					FLOAT			NULL,
+  care_site_id					FLOAT			NULL,
+  visit_source_value			VARCHAR(50)		NULL,
+  visit_source_concept_id		INTEGER		    NULL ,
+  admitting_source_concept_id   FLOAT        	NULL ,
+  admitting_source_value        VARCHAR(50) 	NULL ,
+  discharge_to_source_value		VARCHAR(50)		NULL ,
+  discharge_to_concept_id		FLOAT   		NULL ,
+  preceding_visit_occurrence_id	BIGINT 			NULL
+)
+;
+
+
+--HINT DISTRIBUTE_ON_KEY(person_id)
+CREATE TABLE procedure_occurrence
+(
+  procedure_occurrence_id		FLOAT			NULL ,
+  person_id						FLOAT			NOT NULL ,
+  procedure_concept_id			FLOAT			NULL ,
+  procedure_date				DATE			NULL ,
+  procedure_datetime			TIMESTAMP		NULL ,
+  procedure_type_concept_id		FLOAT			NULL ,
+  modifier_concept_id			INTEGER			NULL ,
+  quantity						INTEGER			NULL ,
+  provider_id					FLOAT			NULL ,
+  visit_occurrence_id			FLOAT			NULL ,
+  visit_detail_id             	BIGINT      	NULL ,
+  procedure_source_value		VARCHAR(50)		NULL ,
+  procedure_source_concept_id	FLOAT			NULL ,
+  modifier_source_value		    VARCHAR(50)		NULL
+)
+;
+
+
+--HINT DISTRIBUTE_ON_KEY(person_id)
+CREATE TABLE drug_exposure
+(
+  drug_exposure_id				FLOAT			 	NULL ,
+  person_id						FLOAT			 	NOT NULL ,
+  drug_concept_id				FLOAT			  	NULL ,
+  drug_exposure_start_date		DATE			    NULL ,
+  drug_exposure_start_datetime	TIMESTAMP		 	NULL ,
+  drug_exposure_end_date		DATE			    NULL ,
+  drug_exposure_end_datetime	TIMESTAMP		  	NULL ,
+  verbatim_end_date				DATE			    NULL ,
+  drug_type_concept_id			FLOAT			  	NULL ,
+  stop_reason					VARCHAR(20)			NULL ,
+  refills						INTEGER		  		NULL ,
+  quantity						NUMERIC			    NULL ,
+  days_supply					FLOAT		  		NULL ,
+  sig							TEXT				NULL ,
+  route_concept_id				INTEGER				NULL ,
+  lot_number					VARCHAR(50)	 		NULL ,
+  provider_id					FLOAT			  	NULL ,
+  visit_occurrence_id			FLOAT			  	NULL ,
+  visit_detail_id               BIGINT       		NULL ,
+  drug_source_value				VARCHAR(50)	  		NULL ,
+  drug_source_concept_id		FLOAT			  	NULL ,
+  route_source_value			VARCHAR(50)	  		NULL ,
+  dose_unit_source_value		VARCHAR(50)	  		NULL
+)
+;
+
+
+--HINT DISTRIBUTE_ON_KEY(person_id)
+CREATE TABLE condition_occurrence
+(
+  condition_occurrence_id		FLOAT			NULL ,
+  person_id						FLOAT			NOT NULL ,
+  condition_concept_id			FLOAT			NULL ,
+  condition_start_date			DATE			NULL ,
+  condition_start_datetime		TIMESTAMP		NULL ,
+  condition_end_date			DATE			NULL ,
+  condition_end_datetime		TIMESTAMP		NULL ,
+  condition_type_concept_id		FLOAT			NULL ,
+  condition_status_concept_id	FLOAT			NULL ,
+  stop_reason					VARCHAR(20)		NULL ,
+  provider_id					FLOAT			NULL ,
+  visit_occurrence_id			FLOAT			NULL ,
+  visit_detail_id               BIGINT	     	NULL ,
+  condition_source_value		VARCHAR(50)		NULL ,
+  condition_source_concept_id	FLOAT			NULL ,
+  condition_status_source_value	VARCHAR(50)		NULL
+)
+;
+
+
+--HINT DISTRIBUTE_ON_KEY(person_id)
+CREATE TABLE measurement
+(
+  measurement_id				FLOAT			NULL ,
+  person_id						FLOAT			NOT NULL ,
+  measurement_concept_id		FLOAT			NULL ,
+  measurement_date				DATE			NULL ,
+  measurement_datetime			TIMESTAMP		NULL ,
+  measurement_time              VARCHAR(10) 	NULL,
+  measurement_type_concept_id	FLOAT			NULL ,
+  operator_concept_id			INTEGER			NULL ,
+  value_as_number				NUMERIC			NULL ,
+  value_as_concept_id			FLOAT			NULL ,
+  unit_concept_id				FLOAT			NULL ,
+  range_low					    NUMERIC			NULL ,
+  range_high					NUMERIC			NULL ,
+  provider_id					FLOAT			NULL ,
+  visit_occurrence_id			FLOAT			NULL ,
+  visit_detail_id               BIGINT	     	NULL ,
+  measurement_source_value		VARCHAR(50)		NULL ,
+  measurement_source_concept_id	FLOAT			NULL ,
+  unit_source_value				VARCHAR(50)		NULL ,
+  value_source_value			VARCHAR(50)		NULL
+)
+;
+
+
+--HINT DISTRIBUTE_ON_KEY(person_id)
+CREATE TABLE observation
+(
+  observation_id					FLOAT			NULL ,
+  person_id						    FLOAT			NOT NULL ,
+  observation_concept_id			FLOAT			NULL ,
+  observation_date				    DATE			NULL ,
+  observation_datetime				TIMESTAMP		NULL ,
+  observation_type_concept_id	    FLOAT			NULL ,
+  value_as_number				    NUMERIC			NULL ,
+  value_as_string				    VARCHAR(60)		NULL ,
+  value_as_concept_id			    FLOAT			NULL ,
+  qualifier_concept_id			    INTEGER			NULL ,
+  unit_concept_id				    INTEGER			NULL ,
+  provider_id					    FLOAT			NULL ,
+  visit_occurrence_id			    FLOAT			NULL ,
+  visit_detail_id               	BIGINT      	NULL ,
+  observation_source_value		  	VARCHAR(50)		NULL ,
+  observation_source_concept_id		FLOAT			NULL ,
+  unit_source_value				    VARCHAR(50)		NULL ,
+  qualifier_source_value			VARCHAR(50)		NULL ,
+  observation_event_id				BIGINT			NULL ,
+  obs_event_field_concept_id		INTEGER			NULL ,
+  value_as_datetime					TIMESTAMP		NULL
+)
+;
+
+
+/************************
+
+Standardized health system data
+
+************************/
+
+
+/************************
+
+Standardized health economics
+
+************************/
+
+
+/************************
+
+Standardized derived elements
+
+************************/
