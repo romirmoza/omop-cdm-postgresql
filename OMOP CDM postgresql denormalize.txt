@@ -1,0 +1,145 @@
+CREATE TEMP TABLE person_visit
+AS (SELECT person.*,
+           visit_occurrence.visit_start_date,
+           visit_occurrence.preceding_visit_occurrence_id,
+           visit_occurrence.admitting_source_value,
+           visit_occurrence.discharge_to_source_value,
+           visit_occurrence.visit_occurrence_id,
+           visit_occurrence.visit_source_value,
+           visit_occurrence.visit_end_date,
+           visit_occurrence.visit_start_datetime,
+           visit_occurrence.visit_concept_id,
+           visit_occurrence.admitting_source_concept_id,
+           visit_occurrence.visit_source_concept_id,
+           visit_occurrence.visit_type_concept_id,
+           visit_occurrence.discharge_to_concept_id,
+           visit_occurrence.visit_end_datetime
+    FROM person
+    LEFT JOIN visit_occurrence
+    ON person.person_id = visit_occurrence.person_id);
+
+
+CREATE TEMP TABLE person_visit_cond
+AS (SELECT person_visit.*,
+           condition_occurrence.visit_detail_id,
+           condition_occurrence.condition_start_datetime,
+           condition_occurrence.condition_end_datetime,
+           condition_occurrence.condition_source_concept_id,
+           condition_occurrence.condition_status_source_value,
+           condition_occurrence.condition_end_date,
+           condition_occurrence.condition_start_date,
+           condition_occurrence.condition_status_concept_id,
+           condition_occurrence.condition_type_concept_id,
+           condition_occurrence.condition_concept_id,
+           condition_occurrence.stop_reason,
+           condition_occurrence.condition_source_value,
+           condition_occurrence.condition_occurrence_id
+    FROM person_visit
+    LEFT JOIN condition_occurrence
+    ON person_visit.person_id = condition_occurrence.person_id
+        and person_visit.visit_occurrence_id = condition_occurrence.visit_occurrence_id);
+
+
+CREATE TEMP TABLE person_visit_cond_obs
+AS (SELECT person_visit_cond.*,
+           observation.observation_type_concept_id,
+           observation.value_as_concept_id,
+           observation.observation_date,
+           observation.value_as_number,
+           observation.observation_source_concept_id,
+           observation.value_as_string,
+           observation.unit_source_value,
+           observation.observation_concept_id,
+           observation.qualifier_source_value,
+           observation.observation_id,
+           observation.observation_source_value,
+           observation.unit_concept_id,
+           observation.observation_datetime,
+           observation.qualifier_concept_id
+    FROM person_visit_cond
+    LEFT JOIN observation
+    ON person_visit_cond.person_id = observation.person_id
+        and person_visit_cond.visit_occurrence_id = observation.visit_occurrence_id);
+
+
+CREATE TEMP TABLE person_visit_cond_obs_obs_period
+AS (SELECT person_visit_cond_obs.*,
+           observation_period.period_type_concept_id,
+           observation_period.observation_period_end_date,
+           observation_period.observation_period_id,
+           observation_period.observation_period_start_date
+    FROM person_visit_cond_obs
+    LEFT JOIN observation_period
+    ON person_visit_cond_obs.person_id = observation_period.person_id);
+
+CREATE TEMP TABLE person_visit_cond_obs_obs_period_measure
+AS (SELECT person_visit_cond_obs_obs_period.*,
+           measurement.value_source_value,
+           measurement.measurement_id,
+           measurement.measurement_datetime,
+           measurement.measurement_type_concept_id,
+           measurement.operator_concept_id,
+           measurement.measurement_date,
+           measurement.measurement_concept_id,
+           measurement.range_low,
+           measurement.measurement_source_concept_id,
+           measurement.measurement_time,
+           measurement.measurement_source_value,
+           measurement.range_high
+    FROM person_visit_cond_obs_obs_period
+    LEFT JOIN measurement
+    ON person_visit_cond_obs_obs_period.person_id = measurement.person_id
+        and person_visit_cond_obs_obs_period.visit_occurrence_id = measurement.visit_occurrence_id);
+
+CREATE TEMP TABLE person_visit_cond_obs_obs_period_measure_proc
+AS (SELECT person_visit_cond_obs_obs_period_measure.*,
+           procedure_occurrence.procedure_datetime,
+           procedure_occurrence.quantity,
+           procedure_occurrence.procedure_date,
+           procedure_occurrence.procedure_type_concept_id,
+           procedure_occurrence.procedure_source_concept_id,
+           procedure_occurrence.modifier_concept_id,
+           procedure_occurrence.procedure_concept_id,
+           procedure_occurrence.procedure_source_value,
+           procedure_occurrence.modifier_source_value,
+           procedure_occurrence.procedure_occurrence_id
+    FROM person_visit_cond_obs_obs_period_measure
+    LEFT JOIN procedure_occurrence
+    ON person_visit_cond_obs_obs_period_measure.person_id = procedure_occurrence.person_id
+        and person_visit_cond_obs_obs_period_measure.visit_occurrence_id = procedure_occurrence.visit_occurrence_id);
+
+
+CREATE TEMP TABLE person_visit_cond_obs_obs_period_measure_proc_drug
+AS (SELECT person_visit_cond_obs_obs_period_measure_proc.*,
+           drug_exposure.drug_exposure_start_date,
+           drug_exposure.refills,
+           drug_exposure.drug_source_value,
+           drug_exposure.drug_exposure_end_date,
+           drug_exposure.route_concept_id,
+           drug_exposure.lot_number,
+           drug_exposure.days_supply,
+           drug_exposure.sig,
+           drug_exposure.drug_type_concept_id,
+           drug_exposure.drug_source_concept_id,
+           drug_exposure.route_source_value,
+           drug_exposure.drug_exposure_id,
+           drug_exposure.dose_unit_source_value,
+           drug_exposure.drug_exposure_start_datetime,
+           drug_exposure.drug_exposure_end_datetime,
+           drug_exposure.verbatim_end_date,
+           drug_exposure.drug_concept_id
+    FROM person_visit_cond_obs_obs_period_measure_proc
+    LEFT JOIN drug_exposure
+    ON person_visit_cond_obs_obs_period_measure_proc.person_id = drug_exposure.person_id);
+
+
+CREATE TABLE denormalized_data
+AS (SELECT person_visit_cond_obs_obs_period_measure_proc_drug.*,
+           death.death_date,
+           death.death_type_concept_id,
+           death.cause_concept_id,
+           death.cause_source_value,
+           death.cause_source_concept_id
+    FROM person_visit_cond_obs_obs_period_measure_proc_drug
+    LEFT JOIN death
+    ON person_visit_cond_obs_obs_period_measure_proc_drug.person_id = death.person_id);
