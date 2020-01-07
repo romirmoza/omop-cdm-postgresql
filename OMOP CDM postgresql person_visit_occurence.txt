@@ -1,0 +1,155 @@
+CREATE TABLE person_visit
+AS (SELECT person.year_of_birth,
+           person.ethnicity_concept_id,
+           person.provider_id,
+           person.person_id,
+           person.month_of_birth,
+           person.care_site_id,
+           person.day_of_birth,
+           person.location_id,
+           person.race_concept_id,
+           person.gender_concept_id,
+           person.birth_datetime,
+           visit_occurrence.visit_start_date,
+           visit_occurrence.preceding_visit_occurrence_id,
+           visit_occurrence.visit_occurrence_id,
+           visit_occurrence.visit_end_date,
+           visit_occurrence.visit_start_datetime,
+           visit_occurrence.visit_concept_id,
+           visit_occurrence.visit_type_concept_id,
+           visit_occurrence.discharge_to_concept_id,
+           visit_occurrence.visit_end_datetime
+    FROM person
+    LEFT JOIN visit_occurrence
+    ON person.person_id = visit_occurrence.person_id);
+
+
+CREATE TABLE person_visit_death
+AS (SELECT person_visit.*,
+           death.death_date,
+           death.death_datetime,
+           death.death_type_concept_id,
+           death.cause_concept_id
+    FROM person_visit
+    INNER JOIN death
+    ON person_visit.person_id = death.person_id);
+
+
+-- Number of deaths
+SELECT COUNT(DISTINCT person_id) AS deaths
+FROM death;
+
+
+-- Deaths grouped by death_type_concept_id
+SELECT COUNT(DISTINCT person_id) AS deaths, death_type_concept_id
+FROM death
+GROUP BY death_type_concept_id;
+
+
+-- Deaths grouped by cause_concept_id
+SELECT COUNT(DISTINCT person_id) AS deaths, cause_concept_id
+FROM death
+GROUP BY cause_concept_id;
+
+
+-- Deaths grouped by year of death
+SELECT COUNT(DISTINCT person_id) AS deaths, EXTRACT(YEAR FROM death_datetime) AS year
+FROM death
+GROUP BY EXTRACT(YEAR FROM death_datetime)
+ORDER BY deaths DESC;
+
+
+-- Deaths grouped by month of death
+SELECT COUNT(DISTINCT person_id) AS deaths, EXTRACT(MONTH FROM death_datetime) AS month
+FROM death
+GROUP BY EXTRACT(MONTH FROM death_datetime)
+ORDER BY deaths DESC;
+
+
+-- Top 20 persons with the most visit occurrences
+SELECT person_id, COUNT(visit_occurrence_id) AS number_of_visits
+FROM person_visit_death
+GROUP BY person_id
+ORDER BY number_of_visits DESC
+LIMIT 20;
+
+
+-- Visits of dead persons grouped by visit_concept_id
+SELECT COUNT(DISTINCT visit_occurrence_id) AS number_of_visits, visit_concept_id
+FROM person_visit_death
+GROUP BY visit_concept_id
+ORDER BY number_of_visits DESC;
+
+
+-- Visits of dead persons grouped by care_site_id
+SELECT COUNT(DISTINCT visit_occurrence_id) AS number_of_visits, care_site_id
+FROM person_visit_death
+GROUP BY care_site_id
+ORDER BY number_of_visits DESC;
+
+
+-- Number of days between the first and last visit of dead persons
+SELECT person_id, COALESCE(EXTRACT(DAY FROM MAX(visit_end_datetime) - MIN(visit_start_date)), 0) AS days_of_visitations
+FROM person_visit_death
+GROUP BY person_id
+ORDER BY days_of_visitations DESC
+LIMIT 20;
+
+
+-- Histogram of days_of_visitations before deaths
+WITH days_of_visitations AS (
+    SELECT person_id,
+           CAST(COALESCE(EXTRACT(DAY FROM MAX(visit_end_datetime) - MIN(visit_start_date)), 0) AS INT) AS days_of_visitations
+    FROM person_visit_death
+    GROUP BY person_id
+),
+stats AS (
+    SELECT MIN(days_of_visitations) as min,
+           MAX(days_of_visitations) as max
+    FROM days_of_visitations
+),
+histogram AS (
+SELECT width_bucket(days_of_visitations, min, max, 9) as bucket,
+       int4range(min(days_of_visitations), max(days_of_visitations), '[]') as range,
+       COUNT(person_id) as freq
+FROM stats, days_of_visitations
+GROUP BY bucket
+ORDER BY bucket
+)
+SELECT bucket, range, freq,
+       repeat('■',
+              (   freq::float
+                / max(freq) over()
+                * 30
+              )::int
+       ) AS bar
+FROM histogram;
+
+
+-- Histogram of Age at death
+WITH stats AS (
+    SELECT MIN(EXTRACT(YEAR FROM death_datetime) - year_of_birth) as min,
+           MAX(EXTRACT(YEAR FROM death_datetime) - year_of_birth) as max
+    FROM person_visit_death
+),
+age_of_death AS (
+    SELECT visit_occurrence_id,
+           CAST(EXTRACT(YEAR FROM death_datetime) - year_of_birth AS INT) AS age_of_death
+    FROM person_visit_death
+),
+histogram AS (
+SELECT width_bucket(age_of_death, min, max, 9) as bucket,
+       int4range(min(age_of_death), max(age_of_death), '[]') as range,
+       COUNT(visit_occurrence_id) as freq
+FROM stats, age_of_death
+GROUP BY bucket
+ORDER BY bucket
+)
+SELECT bucket, range, freq,
+       repeat('■',
+              (   freq::float
+                / max(freq) over()
+                * 30
+              )::int
+       ) AS bar
+FROM histogram;
