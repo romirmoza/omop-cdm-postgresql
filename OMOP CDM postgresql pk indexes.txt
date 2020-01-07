@@ -1,0 +1,411 @@
+/*********************************************************************************
+# Copyright 2014 Observational Health Data Sciences and Informatics
+#
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+********************************************************************************/
+
+/************************
+
+ ####### #     # ####### ######      #####  ######  #     #            #####        ###      ######  #    #      ##       ###
+ #     # ##   ## #     # #     #    #     # #     # ##   ##    #    # #     #      #   #     #     # #   #      #  #       #  #    # #####  #  ####  ######  ####
+ #     # # # # # #     # #     #    #       #     # # # # #    #    # #           #     #    #     # #  #        ##        #  ##   # #    # # #    # #      #
+ #     # #  #  # #     # ######     #       #     # #  #  #    #    # ######      #     #    ######  ###        ###        #  # #  # #    # # #      #####   ####
+ #     # #     # #     # #          #       #     # #     #    #    # #     # ### #     #    #       #  #      #   # #     #  #  # # #    # # #      #           #
+ #     # #     # #     # #          #     # #     # #     #     #  #  #     # ###  #   #     #       #   #     #    #      #  #   ## #    # # #    # #      #    #
+ ####### #     # ####### #           #####  ######  #     #      ##    #####  ###   ###      #       #    #     ###  #    ### #    # #####  #  ####  ######  ####
+
+
+postgresql script to create the required primary keys and indices within the OMOP common data model, version 6.0
+
+last revised: 30-Aug-2017
+
+author:  Patrick Ryan, Clair Blacketer
+
+description:  These primary keys and indices are considered a minimal requirement to ensure adequate performance of analyses.
+
+*************************/
+
+
+/************************
+*************************
+*************************
+*************************
+
+Data Type Changes
+
+*************************
+*************************
+*************************
+************************/
+
+
+ALTER TABLE person
+ALTER COLUMN year_of_birth SET DATA TYPE INTEGER,
+ALTER COLUMN ethnicity_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN race_concept_id SET DATA TYPE INTEGER;
+
+
+ALTER TABLE visit_occurrence
+ALTER COLUMN person_id SET DATA TYPE BIGINT,
+ALTER COLUMN care_site_id SET DATA TYPE BIGINT,
+ALTER COLUMN admitting_source_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN discharge_to_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN provider_id SET DATA TYPE BIGINT;
+
+
+ALTER TABLE procedure_occurrence
+ALTER COLUMN person_id SET DATA TYPE BIGINT,
+ALTER COLUMN procedure_type_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN procedure_source_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN procedure_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN procedure_occurrence_id SET DATA TYPE BIGINT,
+ALTER COLUMN visit_occurrence_id SET DATA TYPE BIGINT,
+ALTER COLUMN provider_id SET DATA TYPE BIGINT;
+
+
+ALTER TABLE drug_exposure
+ALTER COLUMN person_id SET DATA TYPE BIGINT,
+ALTER COLUMN drug_type_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN drug_source_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN drug_exposure_id SET DATA TYPE BIGINT,
+ALTER COLUMN drug_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN visit_occurrence_id SET DATA TYPE BIGINT,
+ALTER COLUMN provider_id SET DATA TYPE BIGINT,
+ALTER COLUMN days_supply SET DATA TYPE INTEGER;
+
+
+ALTER TABLE condition_occurrence
+ALTER COLUMN condition_source_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN person_id SET DATA TYPE BIGINT,
+ALTER COLUMN condition_status_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN condition_type_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN condition_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN condition_occurrence_id SET DATA TYPE BIGINT,
+ALTER COLUMN visit_occurrence_id SET DATA TYPE BIGINT,
+ALTER COLUMN provider_id SET DATA TYPE BIGINT;
+
+
+ALTER TABLE measurement
+ALTER COLUMN measurement_id SET DATA TYPE BIGINT,
+ALTER COLUMN measurement_type_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN person_id SET DATA TYPE BIGINT,
+ALTER COLUMN measurement_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN measurement_source_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN unit_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN visit_occurrence_id SET DATA TYPE BIGINT,
+ALTER COLUMN provider_id SET DATA TYPE BIGINT,
+ALTER COLUMN value_as_concept_id SET DATA TYPE INTEGER;
+
+
+ALTER TABLE observation
+ALTER COLUMN observation_type_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN person_id SET DATA TYPE BIGINT,
+ALTER COLUMN observation_source_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN observation_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN observation_id SET DATA TYPE BIGINT,
+ALTER COLUMN provider_id SET DATA TYPE BIGINT,
+ALTER COLUMN value_as_concept_id SET DATA TYPE INTEGER,
+ALTER COLUMN visit_occurrence_id SET DATA TYPE BIGINT;
+
+
+/************************
+*************************
+*************************
+*************************
+
+Removing duplicates
+
+*************************
+*************************
+*************************
+************************/
+
+
+DELETE FROM concept a USING (
+    SELECT MIN(ctid) as ctid, concept_id
+    FROM concept
+    GROUP BY concept_id HAVING COUNT(*) > 1
+    ) b
+WHERE a.concept_id = b.concept_id
+AND a.ctid <> b.ctid;
+
+
+DELETE FROM observation_period a USING (
+    SELECT MIN(ctid) as ctid, observation_period_id
+    FROM observation_period
+    GROUP BY observation_period_id HAVING COUNT(*) > 1
+    ) b
+WHERE a.observation_period_id = b.observation_period_id
+AND a.ctid <> b.ctid;
+
+
+DELETE FROM visit_occurrence a USING (
+    SELECT MIN(ctid) as ctid, visit_occurrence_id
+    FROM visit_occurrence
+    GROUP BY visit_occurrence_id HAVING COUNT(*) > 1
+    ) b
+WHERE a.visit_occurrence_id = b.visit_occurrence_id
+AND a.ctid <> b.ctid;
+
+
+DELETE FROM procedure_occurrence a USING (
+    SELECT MIN(ctid) as ctid, procedure_occurrence_id
+    FROM procedure_occurrence
+    GROUP BY procedure_occurrence_id HAVING COUNT(*) > 1
+    ) b
+WHERE a.procedure_occurrence_id = b.procedure_occurrence_id
+AND a.ctid <> b.ctid;
+
+
+DELETE FROM drug_exposure a USING (
+    SELECT MIN(ctid) as ctid, drug_exposure_id
+    FROM drug_exposure
+    GROUP BY drug_exposure_id HAVING COUNT(*) > 1
+    ) b
+WHERE a.drug_exposure_id = b.drug_exposure_id
+AND a.ctid <> b.ctid;
+
+
+DELETE FROM condition_occurrence a USING (
+    SELECT MIN(ctid) as ctid, condition_occurrence_id
+    FROM condition_occurrence
+    GROUP BY condition_occurrence_id HAVING COUNT(*) > 1
+    ) b
+WHERE a.condition_occurrence_id = b.condition_occurrence_id
+AND a.ctid <> b.ctid;
+
+/*
+DELETE FROM measurement a USING (
+    SELECT MIN(ctid) as ctid, measurement_id
+    FROM measurement
+    GROUP BY measurement_id HAVING COUNT(*) > 1
+    ) b
+WHERE a.measurement_id = b.measurement_id
+AND a.ctid <> b.ctid;
+*/
+
+DELETE FROM observation a USING (
+    SELECT MIN(ctid) as ctid, observation_id
+    FROM observation
+    GROUP BY observation_id HAVING COUNT(*) > 1
+    ) b
+WHERE a.observation_id = b.observation_id
+AND a.ctid <> b.ctid;
+
+
+/************************
+*************************
+*************************
+*************************
+
+Delete NULLs
+
+*************************
+*************************
+*************************
+************************/
+
+
+DELETE FROM procedure_occurrence
+WHERE procedure_occurrence_id IS NULL;
+
+
+DELETE FROM drug_exposure
+WHERE drug_exposure_id IS NULL;
+
+
+DELETE FROM condition_occurrence
+WHERE condition_occurrence_id IS NULL;
+
+
+DELETE FROM measurement
+WHERE measurement_id IS NULL;
+
+
+DELETE FROM observation
+WHERE observation_id IS NULL;
+
+
+/************************
+*************************
+*************************
+*************************
+
+Primary key constraints
+
+*************************
+*************************
+*************************
+************************/
+
+
+
+/************************
+
+Standardized vocabulary
+
+************************/
+
+
+ALTER TABLE concept ADD CONSTRAINT xpk_concept PRIMARY KEY (concept_id);
+
+
+/**************************
+
+Standardized meta-data
+
+***************************/
+
+
+
+/************************
+
+Standardized clinical data
+
+************************/
+
+
+/**PRIMARY KEY NONCLUSTERED constraints**/
+
+ALTER TABLE person ADD CONSTRAINT xpk_person PRIMARY KEY ( person_id ) ;
+
+ALTER TABLE observation_period ADD CONSTRAINT xpk_observation_period PRIMARY KEY ( observation_period_id ) ;
+
+ALTER TABLE visit_occurrence ADD CONSTRAINT xpk_visit_occurrence PRIMARY KEY ( visit_occurrence_id ) ;
+
+ALTER TABLE procedure_occurrence ADD CONSTRAINT xpk_procedure_occurrence PRIMARY KEY ( procedure_occurrence_id ) ;
+
+ALTER TABLE drug_exposure ADD CONSTRAINT xpk_drug_exposure PRIMARY KEY ( drug_exposure_id ) ;
+
+ALTER TABLE condition_occurrence ADD CONSTRAINT xpk_condition_occurrence PRIMARY KEY ( condition_occurrence_id ) ;
+
+ALTER TABLE measurement ADD CONSTRAINT xpk_measurement PRIMARY KEY ( measurement_id ) ;
+
+ALTER TABLE observation  ADD CONSTRAINT xpk_observation PRIMARY KEY ( observation_id ) ;
+
+
+/************************
+
+Standardized health system data
+
+************************/
+
+
+/************************
+
+Standardized health economics
+
+************************/
+
+
+/************************
+
+Standardized derived elements
+
+************************/
+
+
+/************************
+*************************
+*************************
+*************************
+
+Indices
+
+*************************
+*************************
+*************************
+************************/
+
+/************************
+
+Standardized vocabulary
+
+************************/
+
+CREATE UNIQUE INDEX idx_concept_concept_id  ON concept  (concept_id ASC);
+CLUSTER concept  USING idx_concept_concept_id ;
+CREATE INDEX idx_concept_code ON concept (concept_code ASC);
+CREATE INDEX idx_concept_vocabluary_id ON concept (vocabulary_id ASC);
+CREATE INDEX idx_concept_domain_id ON concept (domain_id ASC);
+CREATE INDEX idx_concept_class_id ON concept (concept_class_id ASC);
+
+/**************************
+
+Standardized meta-data
+
+***************************/
+
+
+/************************
+
+Standardized clinical data
+
+************************/
+
+CREATE UNIQUE INDEX idx_person_id  ON person  (person_id ASC);
+CLUSTER person  USING idx_person_id ;
+
+CREATE INDEX idx_observation_period_id  ON observation_period  (person_id ASC);
+CLUSTER observation_period  USING idx_observation_period_id ;
+
+CREATE INDEX idx_visit_person_id  ON visit_occurrence  (person_id ASC);
+CLUSTER visit_occurrence  USING idx_visit_person_id ;
+CREATE INDEX idx_visit_concept_id ON visit_occurrence (visit_concept_id ASC);
+
+CREATE INDEX idx_procedure_person_id  ON procedure_occurrence  (person_id ASC);
+CLUSTER procedure_occurrence  USING idx_procedure_person_id ;
+CREATE INDEX idx_procedure_concept_id ON procedure_occurrence (procedure_concept_id ASC);
+CREATE INDEX idx_procedure_visit_id ON procedure_occurrence (visit_occurrence_id ASC);
+
+CREATE INDEX idx_drug_person_id  ON drug_exposure  (person_id ASC);
+CLUSTER drug_exposure  USING idx_drug_person_id ;
+CREATE INDEX idx_drug_concept_id ON drug_exposure (drug_concept_id ASC);
+CREATE INDEX idx_drug_visit_id ON drug_exposure (visit_occurrence_id ASC);
+
+CREATE INDEX idx_condition_person_id  ON condition_occurrence  (person_id ASC);
+CLUSTER condition_occurrence  USING idx_condition_person_id ;
+CREATE INDEX idx_condition_concept_id ON condition_occurrence (condition_concept_id ASC);
+CREATE INDEX idx_condition_visit_id ON condition_occurrence (visit_occurrence_id ASC);
+
+CREATE INDEX idx_measurement_person_id  ON measurement  (person_id ASC);
+CLUSTER measurement  USING idx_measurement_person_id ;
+CREATE INDEX idx_measurement_concept_id ON measurement (measurement_concept_id ASC);
+CREATE INDEX idx_measurement_visit_id ON measurement (visit_occurrence_id ASC);
+
+CREATE INDEX idx_observation_person_id  ON observation  (person_id ASC);
+CLUSTER observation  USING idx_observation_person_id ;
+CREATE INDEX idx_observation_concept_id ON observation (observation_concept_id ASC);
+CREATE INDEX idx_observation_visit_id ON observation (visit_occurrence_id ASC);
+
+
+/************************
+
+Standardized health system data
+
+************************/
+
+
+/************************
+
+Standardized health economics
+
+************************/
+
+
+/************************
+
+Standardized derived elements
+
+************************/
