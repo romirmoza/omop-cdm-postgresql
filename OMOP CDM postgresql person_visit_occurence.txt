@@ -6,12 +6,9 @@ DROP TABLE IF EXISTS person_visit_death_with_concepts;
 CREATE TABLE person_visit
 AS (SELECT person.year_of_birth,
            person.ethnicity_concept_id,
-           person.provider_id,
            person.person_id,
            person.month_of_birth,
-           person.care_site_id,
            person.day_of_birth,
-           person.location_id,
            person.race_concept_id,
            person.gender_concept_id,
            person.birth_datetime,
@@ -19,11 +16,9 @@ AS (SELECT person.year_of_birth,
            visit_occurrence.preceding_visit_occurrence_id,
            visit_occurrence.visit_occurrence_id,
            visit_occurrence.visit_end_date,
-           visit_occurrence.visit_start_datetime,
            visit_occurrence.visit_concept_id,
            visit_occurrence.visit_type_concept_id,
-           visit_occurrence.discharge_to_concept_id,
-           visit_occurrence.visit_end_datetime
+           visit_occurrence.discharge_to_concept_id
     FROM person
     LEFT JOIN visit_occurrence
     ON person.person_id = visit_occurrence.person_id);
@@ -51,8 +46,7 @@ CREATE TABLE person_visit_death_with_concepts
 AS (SELECT person_visit_with_concepts.*,
            death.death_date,
            death.death_datetime,
-           death.death_type_concept_id,
-           death.cause_concept_id
+           death.death_type_concept_id
     FROM person_visit_with_concepts
     INNER JOIN death
     ON person_visit_with_concepts.person_id = death.person_id);
@@ -73,12 +67,6 @@ FROM death;
 SELECT COUNT(DISTINCT person_id) AS deaths, death_type_concept_id
 FROM death
 GROUP BY death_type_concept_id;
-
-
--- Deaths grouped by cause_concept_id
-SELECT COUNT(DISTINCT person_id) AS deaths, cause_concept_id
-FROM death
-GROUP BY cause_concept_id;
 
 
 -- Deaths grouped by year of death
@@ -110,15 +98,8 @@ GROUP BY visit_concept_name
 ORDER BY number_of_visits DESC;
 
 
--- Visits of dead persons grouped by care_site_id
-SELECT COUNT(DISTINCT visit_occurrence_id) AS number_of_visits, care_site_id
-FROM person_visit_death_with_concepts
-GROUP BY care_site_id
-ORDER BY number_of_visits DESC;
-
-
 -- Number of days between the first and last visit of dead persons
-SELECT person_id, COALESCE(EXTRACT(DAY FROM MAX(visit_end_datetime) - MIN(visit_start_date)), 0) AS days_of_visitations
+SELECT person_id, COALESCE(MAX(visit_end_date) - MIN(visit_start_date), 0) AS days_of_visitations
 FROM person_visit_death_with_concepts
 GROUP BY person_id
 ORDER BY days_of_visitations DESC
@@ -128,7 +109,7 @@ LIMIT 20;
 -- Histogram of days_of_visitations before deaths
 WITH days_of_visitations AS (
     SELECT person_id,
-           CAST(COALESCE(EXTRACT(DAY FROM MAX(visit_end_datetime) - MIN(visit_start_date)), 0) AS INT) AS days_of_visitations
+           CAST(COALESCE(MAX(visit_end_date) - MIN(visit_start_date), 0) AS INT) AS days_of_visitations
     FROM person_visit_death_with_concepts
     GROUP BY person_id
 ),
