@@ -1,0 +1,21 @@
+DROP TABLE IF EXISTS person_visit_death_aggregate;
+
+CREATE TABLE person_visit_death_aggregate
+AS (SELECT MAX(year_of_birth) AS year_of_birth,
+           MAX(ethnicity_concept_id) AS ethnicity_concept_id,
+           MAX(person_id) AS person_id,
+           MAX(month_of_birth) AS month_of_birth,
+           MAX(day_of_birth) AS day_of_birth,
+           MAX(race_concept_id) AS race_concept_id,
+           MAX(gender_concept_id) AS gender_concept_id,
+           MAX(birth_datetime) AS birth_datetime,
+           MAX(race_concept_name) AS race_concept_name,
+           COUNT(DISTINCT visit_occurrence_id) AS number_of_visits,
+           SUM(CASE WHEN visit_concept_name = 'Inpatient Visit' THEN 1 ELSE 0 END) AS inpatient_visit_count,
+           SUM(CASE WHEN visit_concept_name = 'Outpatient Visit' THEN 1 ELSE 0 END) AS outpatient_visit_count,
+           SUM(CASE WHEN visit_concept_name = 'Emergency Room Visit' THEN 1 ELSE 0 END) AS er_visit_count,
+           SUM(CASE WHEN death_date - visit_start_date < 365 THEN COALESCE(visit_end_date - visit_start_date, 0) ELSE 0 END) AS days_of_visit_one_year_before_death,
+           SUM(CASE WHEN death_date - visit_start_date < 365 THEN COALESCE(visit_end_date - visit_start_date, 0) ELSE 0 END) / 3.65 AS percentage_of_visits_one_year_before_death,
+           MAX(EXTRACT(YEAR FROM death_datetime) - year_of_birth) AS age_at_death
+   FROM person_visit_death_with_concepts
+   GROUP BY person_id);
