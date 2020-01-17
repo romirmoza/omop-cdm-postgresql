@@ -48,7 +48,7 @@ AS (SELECT person_visit_with_concepts.*,
            death.death_datetime,
            death.death_type_concept_id
     FROM person_visit_with_concepts
-    INNER JOIN death
+    LEFT JOIN death
     ON person_visit_with_concepts.person_id = death.person_id);
 
 
