@@ -8,7 +8,7 @@ import pickle
 import warnings
 warnings.filterwarnings('ignore')
 
-concept_dir = '/data/concept_codes_final/'
+concept_dir = '/app/concept_codes_final/'
 training_dir = '/train/'
 features_filepath = 'features.txt'
 
@@ -61,11 +61,11 @@ def aggregate_data(df, window_size, group_by_var, date_var, agg_dict, rename_dic
     return df_agg
 
 def generate_training_data_nw():
-    import os
-    print('now in', os.getcwd())
-    for d in os.listdir(training_dir):
-        print(d)
-    print('end listed files')
+    # import os
+    # print('now in', os.getcwd())
+    # for d in os.listdir(training_dir):
+    #     print(d)
+    # print('end listed files')
     filepath = training_dir + 'person.csv'
     
     df_person = pd.read_csv(filepath, usecols = ['year_of_birth',

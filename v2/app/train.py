@@ -4,17 +4,20 @@ import numpy as np
 from datetime import datetime
 import sklearn as skl
 from joblib import dump
-
+import xgboost as xgb
+        
 ROOT="/"
 
 class OmopParser(object):
 
     def __init__(self):
         self.name = 'omop_parser'
-        self.X = 0
-        self.y = 0
+        self.modelfile = ROOT+'model/xgb_model.joblib'
+        self.train_features = 0
+        self.d_train = 0
 
     def load_data(self, filename):
+        print("Train load data start", flush = True)
         train = pd.read_csv(filename,low_memory = False)
         from sklearn.preprocessing import LabelEncoder
         label_encoder = LabelEncoder()
@@ -24,18 +27,20 @@ class OmopParser(object):
         X = train.drop(['death_in_next_window','person_id'], axis = 1)
         self.train_features = X.columns.values
         y = train[['death_in_next_window']]
-        self.X = np.array(X)
-        self.y = np.array(y).ravel()
+        X = np.array(X)
+        y = np.array(y).ravel()
+        self.d_train = xgb.DMatrix(X, y, feature_names=self.train_features)
+        print("Train load data end", flush = True)
+        return
         
         
     def xgb_fit(self):
         '''
         apply XGB
         '''
-        import xgboost as xgb
-        X = self.X
-        y = self.y
 
+        print("Train fit start", flush = True)
+        
         params = {
             'eval_metric': ['auc', 'error'],
             'tree_method' : 'auto',
@@ -61,22 +66,21 @@ class OmopParser(object):
 
         evals_result ={}
 
-        d_train_full = xgb.DMatrix(X, y, feature_names=self.train_features)
-        watchlist = [(d_train_full, 'train_full')]
+        watchlist = [(self.d_train, 'train_full')]
 
-        xgb_model = xgb.train(params, d_train_full, num_round, watchlist,
-                      early_stopping_rounds=50, maximize=True, 
-                      verbose_eval=False)
+        xgb_model = xgb.train(params=params, dtrain=self.d_train,
+                              num_boost_round=num_round, evals=watchlist,
+                              early_stopping_rounds=50, verbose_eval=False)
 
 
-        dump(xgb_model, '/model/xgb_model.joblib')
-
+        dump(xgb_model, self.modelfile)
+        print("Train fit end", flush = True)
         return
     
     
 if __name__ == '__main__':
     FOLDER = 'scratch/'
-    FILE_STR = 'training_all_nw.csv'
+    FILE_STR = 'train_all_nw.csv'
     op = OmopParser()
     op.load_data(ROOT + FOLDER + FILE_STR)
     op.xgb_fit()
