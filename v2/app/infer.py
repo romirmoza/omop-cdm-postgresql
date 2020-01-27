@@ -6,7 +6,7 @@ from datetime import datetime
 from joblib import load
 import xgboost as xgb
 
-ROOT = "/"
+ROOT = "../"
 
 class OmopParser(object):
 
@@ -42,10 +42,11 @@ class OmopParser(object):
         print("Infer start", flush = True)
         xgb_model =  load(self.modelfile)
 
-        Y_pred = xgb_model.predict(self.d_test)
+        Y_pred = xgb_model.predict_proba(self.d_test)
         output = pd.DataFrame(Y_pred,columns = ['score'])
         output_prob = pd.concat([self.person_id,output],axis = 1)
         output_prob.columns = ["person_id", "score"]
+        output_prob.score = output_prob.score.clip(0.0,1.0)  # just in case
         output_prob.to_csv(ROOT+'output/predictions.csv', index = False)
         print("Infer finished", flush = True)
 

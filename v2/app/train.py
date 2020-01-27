@@ -68,9 +68,9 @@ class OmopParser(object):
 
         watchlist = [(self.d_train, 'train_full')]
 
-        xgb_model = xgb.train(params, self.d_train, num_round, watchlist,
-                      early_stopping_rounds=50, maximize=True, 
-                      verbose_eval=False)
+        xgb_model = xgb.train(params=params, dtrain=self.d_train,
+                              num_boost_round=num_round, evals=watchlist,
+                              early_stopping_rounds=50, verbose_eval=False)
 
 
         dump(xgb_model, self.modelfile)
