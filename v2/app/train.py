@@ -4,7 +4,8 @@ import numpy as np
 from datetime import datetime
 import sklearn as skl
 from joblib import dump
-
+import xgboost as xgb
+        
 ROOT="/"
 
 class OmopParser(object):
@@ -37,7 +38,7 @@ class OmopParser(object):
         '''
         apply XGB
         '''
-        import xgboost as xgb
+
         print("Train fit start", flush = True)
         
         params = {
