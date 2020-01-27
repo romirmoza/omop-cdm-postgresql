@@ -8,7 +8,7 @@ import pickle
 import warnings
 warnings.filterwarnings('ignore')
 
-concept_dir = '/data/concept_codes_final/'
+concept_dir = '/app/concept_codes_final/'
 training_dir = '/train/'
 features_filepath = 'features.txt'
 
