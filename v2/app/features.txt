@@ -156,7 +156,6 @@ procedure_concept_4102739
 condition_concept_318736
 procedure_concept_2212945
 procedure_concept_2101928
-observation_concept_2106284
 observation_concept_2614667
 procedure_concept_2002245
 observation_concept_2617820
@@ -239,7 +238,6 @@ procedure_concept_2000470
 observation_concept_2617452
 drug_concept_43011909
 condition_concept_81723
-condition_concept_192357
 procedure_concept_2003947
 latest_observation_date
 drug_concept_40162717
