@@ -60,7 +60,8 @@ class OmopParser(object):
         self.name = 'omop_parser'
         self.modelfile = ROOT+'model/xgb_model.joblib'
         self.train_features = 0
-        self.d_train = 0
+        self.X = 0
+        self.y = 0
 
     def load_data(self, filename):
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data start", flush = True)
@@ -79,9 +80,8 @@ class OmopParser(object):
         X = train.drop(['death_in_next_window','person_id'], axis = 1)
         self.train_features = X.columns.values
         y = train[['death_in_next_window']]
-        X = np.array(X)
-        y = np.array(y).ravel()
-        self.d_train = xgb.DMatrix(X, y, feature_names=self.train_features)
+        self.X = np.array(X)
+        self.y = np.array(y).ravel()
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data end", flush = True)
         return
 
@@ -114,20 +114,31 @@ class OmopParser(object):
             'n_jobs': -1.0,
         }
 
-        num_round = 100
+        num_round = 2000
+
+        from sklearn.model_selection import StratifiedShuffleSplit
+        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=1234)
+
+        for train_index, valid_index in sss.split(self.X, self.y):
+            X_train, X_valid = self.X[train_index], self.X[valid_index]
+            y_train, y_valid = self.y[train_index], self.y[valid_index]
+
 
         evals_result ={}
+        d_train = xgb.DMatrix(X_train, y_train, feature_names=self.train_features)
+        d_valid = xgb.DMatrix(X_valid, y_valid,  feature_names=self.train_features)
+        watchlist = [(d_train, 'train'), (d_valid, 'valid')]
 
-        watchlist = [(self.d_train, 'train_full')]
-
-        xgb_model = xgb.train(params=params, dtrain=self.d_train,
-                              num_boost_round=num_round, evals=watchlist,
-                              evals_result=evals_result,
-                              early_stopping_rounds=50, verbose_eval=False)
+        xgb_model = xgb.train(params=params, dtrain=d_train, num_boost_round=num_round, 
+                      evals=watchlist, evals_result=evals_result, 
+                      early_stopping_rounds=200, verbose_eval=False)
 
 
         dump(xgb_model, self.modelfile)
-        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"AUC score = "+str(evals_result['train_full']['auc'][xgb_model.best_iteration]), flush = True)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+\
+              "Train AUC = "+str(evals_result['train']['auc'][xgb_model.best_iteration])+\
+              " Valid AUC = "+str(evals_result['valid']['auc'][xgb_model.best_iteration])+\
+              ' at '+str(xgb_model.best_iteration), flush = True)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit end", flush = True)
         return
 
