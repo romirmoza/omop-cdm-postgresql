@@ -5,7 +5,7 @@ from datetime import datetime
 import sklearn as skl
 from joblib import dump
 import xgboost as xgb
-        
+
 ROOT="/"
 
 class OmopParser(object):
@@ -32,17 +32,17 @@ class OmopParser(object):
         self.d_train = xgb.DMatrix(X, y, feature_names=self.train_features)
         print("Train load data end", flush = True)
         return
-        
-        
+
+
     def xgb_fit(self):
         '''
         apply XGB
         '''
 
         print("Train fit start", flush = True)
-        
+
         params = {
-            'eval_metric': ['auc', 'error'],
+            'eval_metric': ['auc'],
             'tree_method' : 'auto',
             'random_state' : 1234,
             'reg_lambda' : 1.0,
@@ -76,8 +76,8 @@ class OmopParser(object):
         dump(xgb_model, self.modelfile)
         print("Train fit end", flush = True)
         return
-    
-    
+
+
 if __name__ == '__main__':
     FOLDER = 'scratch/'
     FILE_STR = 'train_all_nw.csv'
