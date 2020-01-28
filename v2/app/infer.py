@@ -46,7 +46,7 @@ class OmopParser(object):
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer start", flush = True)
         xgb_model =  load(self.modelfile)
 
-        Y_pred = xgb_model.predict(self.d_test)
+        Y_pred = xgb_model.predict(self.d_test, ntree_limit=xgb_model.best_ntree_limit)
         output = pd.DataFrame(Y_pred,columns = ['score'])
         output_prob = pd.concat([self.person_id,output],axis = 1)
         output_prob.columns = ["person_id", "score"]
