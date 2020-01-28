@@ -63,7 +63,7 @@ class OmopParser(object):
             'n_jobs': -1.0,
         }
 
-        num_round = 1000
+        num_round = 100
 
         evals_result ={}
 
