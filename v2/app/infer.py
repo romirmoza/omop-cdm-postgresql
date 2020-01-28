@@ -6,7 +6,7 @@ from datetime import datetime
 from joblib import load
 import xgboost as xgb
 
-ROOT = "../"
+ROOT = "/"
 
 class OmopParser(object):
 
