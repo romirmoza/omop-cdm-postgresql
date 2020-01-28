@@ -67,8 +67,9 @@ def generate_training_data_nw():
     # for d in os.listdir(training_dir):
     #     print(d)
     # print('end listed files')
+    print("Generate training data start", flush = True)
     filepath = training_dir + 'person.csv'
-
+    print("Reading person data", flush = True)
     df_person = pd.read_csv(filepath, usecols = ['year_of_birth',
                                                  'ethnicity_concept_id',
                                                  'person_id',
@@ -77,6 +78,7 @@ def generate_training_data_nw():
                                                  'race_concept_id',
                                                  'gender_concept_id'], nrows=rows_limit)
 
+    print("Reading visit_occurrence data", flush = True)
     filepath = filepath = training_dir + 'visit_occurrence.csv'
     df_visits = pd.read_csv(filepath, usecols=['person_id',
                                                'visit_start_date',
@@ -93,6 +95,8 @@ def generate_training_data_nw():
     del df_visits
 
     filepath = concept_dir + 'all_concepts.csv'
+
+    print("Reading all_concepts data", flush = True)
     df_concepts = pd.read_csv(filepath, usecols=['concept_name',
                                                  'concept_id',
                                                  'vocabulary_id'], nrows=rows_limit)
@@ -114,6 +118,7 @@ def generate_training_data_nw():
     pd.merge(df_person_visits_race, df_concepts_visit, on=['visit_concept_id'], how='left')
 
     filepath = training_dir + 'death.csv'
+    print("Reading death data", flush = True)
     df_death = pd.read_csv(filepath, usecols=['person_id',
                                               'death_date',
                                               'death_datetime',
@@ -167,6 +172,7 @@ def generate_training_data_nw():
 
     # Merge with condition_occurrence
     filepath = training_dir + 'condition_occurrence.csv'
+    print("Reading condition_occurrence data", flush = True)
     df = pd.read_csv(filepath, usecols = ['condition_occurrence_id',
                                           'person_id',
                                           'condition_concept_id',
@@ -208,6 +214,7 @@ def generate_training_data_nw():
 
     # Merge with procedure_occurrence
     filepath = training_dir + 'procedure_occurrence.csv'
+    print("Reading procedure_occurrence data", flush = True)
     df = pd.read_csv(filepath, usecols = ['procedure_occurrence_id',
                                           'person_id',
                                           'procedure_concept_id',
@@ -241,6 +248,7 @@ def generate_training_data_nw():
 
     # Merge with drug_exposure
     filepath = training_dir + 'drug_exposure.csv'
+    print("Reading drug_exposure data", flush = True)
     df = pd.read_csv(filepath, usecols = ['drug_exposure_id',
                                           'person_id',
                                           'drug_concept_id',
@@ -277,6 +285,7 @@ def generate_training_data_nw():
 
     # Merge with oberservations
     filepath = training_dir + 'observation.csv'
+    print("Reading observation data", flush = True)
     df = pd.read_csv(filepath, usecols = ['observation_id',
                                           'person_id',
                                           'observation_concept_id',
@@ -314,6 +323,7 @@ def generate_training_data_nw():
     col_num = train.shape[1]
 
     # unroll the _list columns and one-hot encode them
+    print("Unrolling cols", flush = True)
     lists = [c for c in train.columns if '_list' in c]
     for idx, row in train.iterrows():
         for l in lists:
@@ -335,6 +345,7 @@ def generate_training_data_nw():
     train.race_concept_name = train.race_concept_name.fillna('Unknown')
 
     train.to_csv('/scratch/train_all_nw.csv', index=False)
+    print("Generate training data end", flush = True)
     return 0
 
 if __name__ == '__main__':
