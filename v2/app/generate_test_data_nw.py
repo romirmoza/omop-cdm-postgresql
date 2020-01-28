@@ -1,7 +1,7 @@
 ## generate test data
-
+import os
 import pandas as pd
-from datetime import timedelta
+from datetime import timedelta, datetime
 import re
 import pickle
 
@@ -62,9 +62,9 @@ def aggregate_data(df, window_size, group_by_var, date_var, agg_dict, rename_dic
     return df_agg
 
 def generate_training_data_nw():
-    print("Generate test data start", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate test data start", flush = True)
     filepath = training_dir + 'person.csv'
-    print("Reading person data", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading person data", flush = True)
     df_person = pd.read_csv(filepath, usecols = ['year_of_birth',
                                                  'ethnicity_concept_id',
                                                  'person_id',
@@ -73,7 +73,7 @@ def generate_training_data_nw():
                                                  'race_concept_id',
                                                  'gender_concept_id'], nrows=rows_limit)
 
-    print("Reading visit_occurrence data", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading visit_occurrence data", flush = True)
     filepath = filepath = training_dir + 'visit_occurrence.csv'
     df_visits = pd.read_csv(filepath, usecols=['person_id',
                                                'visit_start_date',
@@ -91,7 +91,7 @@ def generate_training_data_nw():
 
     filepath = concept_dir + 'all_concepts.csv'
 
-    print("Reading all_concepts data", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading all_concepts data", flush = True)
     df_concepts = pd.read_csv(filepath, usecols=['concept_name',
                                                  'concept_id',
                                                  'vocabulary_id'], nrows=rows_limit)
@@ -113,7 +113,7 @@ def generate_training_data_nw():
     pd.merge(df_person_visits_race, df_concepts_visit, on=['visit_concept_id'], how='left')
 
     filepath = training_dir + 'death.csv'
-    print("Reading death data", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading death data", flush = True)
     df_death = pd.read_csv(filepath, usecols=['person_id',
                                               'death_date',
                                               'death_datetime',
@@ -166,7 +166,7 @@ def generate_training_data_nw():
     important_observations = re.findall(r"observation_concept_([0-9]+)", features)
 
     # Merge with condition_occurrence
-    print("Reading condition_occurrence data", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading condition_occurrence data", flush = True)
     filepath = training_dir + 'condition_occurrence.csv'
     df = pd.read_csv(filepath, usecols = ['condition_occurrence_id',
                                           'person_id',
@@ -209,7 +209,7 @@ def generate_training_data_nw():
 
     # Merge with procedure_occurrence
     filepath = training_dir + 'procedure_occurrence.csv'
-    print("Reading procedure_occurrence data", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading procedure_occurrence data", flush = True)
     df = pd.read_csv(filepath, usecols = ['procedure_occurrence_id',
                                           'person_id',
                                           'procedure_concept_id',
@@ -243,7 +243,7 @@ def generate_training_data_nw():
 
     # Merge with drug_exposure
     filepath = training_dir + 'drug_exposure.csv'
-    print("Reading drug_exposure data", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading drug_exposure data", flush = True)
     df = pd.read_csv(filepath, usecols = ['drug_exposure_id',
                                           'person_id',
                                           'drug_concept_id',
@@ -280,7 +280,7 @@ def generate_training_data_nw():
 
     # Merge with oberservations
     filepath = training_dir + 'observation.csv'
-    print("Reading observation data", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading observation data", flush = True)
     df = pd.read_csv(filepath, usecols = ['observation_id',
                                           'person_id',
                                           'observation_concept_id',
@@ -318,7 +318,7 @@ def generate_training_data_nw():
     col_num = train.shape[1]
 
     # unroll the _list columns and one-hot encode them
-    print("Unrolling cols", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Unrolling cols", flush = True)
     lists = [c for c in train.columns if '_list' in c]
     for idx, row in train.iterrows():
         for l in lists:
@@ -340,7 +340,7 @@ def generate_training_data_nw():
     train.race_concept_name = train.race_concept_name.fillna('Unknown')
 
     train.to_csv('/scratch/test_all_nw.csv', index=False)
-    print("Generate test data end", flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate test data end", flush = True)
     return 0
 
 if __name__ == '__main__':

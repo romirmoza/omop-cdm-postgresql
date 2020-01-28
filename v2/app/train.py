@@ -1,3 +1,4 @@
+import os
 import datetime
 import pandas as pd
 import numpy as np
@@ -17,7 +18,7 @@ class OmopParser(object):
         self.d_train = 0
 
     def load_data(self, filename):
-        print("Train load data start", flush = True)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data start", flush = True)
         train = pd.read_csv(filename,low_memory = False)
         from sklearn.preprocessing import LabelEncoder
         label_encoder = LabelEncoder()
@@ -30,7 +31,7 @@ class OmopParser(object):
         X = np.array(X)
         y = np.array(y).ravel()
         self.d_train = xgb.DMatrix(X, y, feature_names=self.train_features)
-        print("Train load data end", flush = True)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data end", flush = True)
         return
 
 
@@ -39,10 +40,10 @@ class OmopParser(object):
         apply XGB
         '''
 
-        print("Train fit start", flush = True)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit start", flush = True)
 
         params = {
-            'eval_metric': ['auc'],
+            'eval_metric': 'auc',
             'tree_method' : 'auto',
             'random_state' : 1234,
             'reg_lambda' : 1.0,
@@ -74,7 +75,7 @@ class OmopParser(object):
 
 
         dump(xgb_model, self.modelfile)
-        print("Train fit end", flush = True)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit end", flush = True)
         return
 
 

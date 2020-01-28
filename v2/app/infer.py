@@ -1,3 +1,4 @@
+import os
 import datetime
 from operator import add
 import pandas as pd
@@ -17,7 +18,7 @@ class OmopParser(object):
         self.d_test = 0
 
     def load_data(self, test_filename, train_filename):
-        print("Infer load data start", flush = True)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer load data start", flush = True)
         test = pd.read_csv(test_filename,low_memory = False)
         from sklearn.preprocessing import LabelEncoder
         label_encoder = LabelEncoder()
@@ -37,12 +38,12 @@ class OmopParser(object):
         X = np.array(X)
         y = np.array(y).ravel()
         self.d_test = xgb.DMatrix(X, y, feature_names=feature_names)
-        print("Infer load data done", flush = True)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer load data done", flush = True)
         return
 
     def xgb_predict(self):
         '''infer with XGBoost'''
-        print("Infer start", flush = True)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer start", flush = True)
         xgb_model =  load(self.modelfile)
 
         Y_pred = xgb_model.predict(self.d_test)
@@ -51,7 +52,7 @@ class OmopParser(object):
         output_prob.columns = ["person_id", "score"]
         output_prob.score = output_prob.score.clip(0.0,1.0)  # just in case
         output_prob.to_csv(ROOT+'output/predictions.csv', index = False)
-        print("Infer finished", flush = True)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer finished", flush = True)
 
         return
 
