@@ -15,7 +15,7 @@ class OmopParser(object):
         self.modelfile = ROOT+'model/xgb_model.joblib'
         self.person_id = 0
         self.d_test = 0
-        
+
     def load_data(self, test_filename, train_filename):
         print("Infer load data start", flush = True)
         test = pd.read_csv(test_filename,low_memory = False)
@@ -27,6 +27,9 @@ class OmopParser(object):
         self.person_id = test.person_id
         # order the columnns of the test set like the train set
         train_features = pd.read_csv(train_filename, nrows=1).columns.values
+        for feature in train_features:
+            if feature not in test.columns:
+                test[feature] = np.nan
         X = test[train_features]
         X = X.drop(['death_in_next_window','person_id'], axis = 1)
         feature_names=X.columns.values
@@ -42,7 +45,7 @@ class OmopParser(object):
         print("Infer start", flush = True)
         xgb_model =  load(self.modelfile)
 
-        Y_pred = xgb_model.predict_proba(self.d_test)
+        Y_pred = xgb_model.predict(self.d_test)
         output = pd.DataFrame(Y_pred,columns = ['score'])
         output_prob = pd.concat([self.person_id,output],axis = 1)
         output_prob.columns = ["person_id", "score"]
