@@ -8,6 +8,7 @@ import pickle
 import warnings
 warnings.filterwarnings('ignore')
 
+rows_limit = 10000
 concept_dir = '/app/concept_codes_final/'
 training_dir = '/infer/'
 features_filepath = 'features.txt'
@@ -68,7 +69,7 @@ def generate_training_data_nw():
                                                  'month_of_birth',
                                                  'day_of_birth',
                                                  'race_concept_id',
-                                                 'gender_concept_id'])
+                                                 'gender_concept_id'], nrows=rows_limit)
 
     filepath = filepath = training_dir + 'visit_occurrence.csv'
     df_visits = pd.read_csv(filepath, usecols=['person_id',
@@ -78,7 +79,7 @@ def generate_training_data_nw():
                                                'visit_end_date',
                                                'visit_concept_id',
                                                'visit_type_concept_id',
-                                               'discharge_to_concept_id'])
+                                               'discharge_to_concept_id'], nrows=rows_limit)
 
     df_person_visits = pd.merge(df_person, df_visits, on=['person_id'], how='left')
 
@@ -88,7 +89,7 @@ def generate_training_data_nw():
     filepath = concept_dir + 'all_concepts.csv'
     df_concepts = pd.read_csv(filepath, usecols=['concept_name',
                                                  'concept_id',
-                                                 'vocabulary_id'])
+                                                 'vocabulary_id'], nrows=rows_limit)
 
     df_concepts_race = df_concepts[df_concepts.vocabulary_id=='Race']
     df_concepts_race = df_concepts_race.drop(columns=['vocabulary_id'])
@@ -110,7 +111,7 @@ def generate_training_data_nw():
     df_death = pd.read_csv(filepath, usecols=['person_id',
                                               'death_date',
                                               'death_datetime',
-                                              'death_type_concept_id'])
+                                              'death_type_concept_id'], nrows=rows_limit)
 
     df = pd.merge(df_person_visits_race_concepts, df_death, on=['person_id'], how='left')
 
@@ -167,7 +168,7 @@ def generate_training_data_nw():
                                           'condition_end_date',
                                           'condition_type_concept_id',
                                           'condition_status_concept_id',
-                                          'visit_occurrence_id'])
+                                          'visit_occurrence_id'], nrows=rows_limit)
 
     df['condition_end_date'] = df['condition_end_date'] if not 'NaT' else df['condition_start_date']
     df['condition_concept_id'] = df['condition_concept_id'].astype('Int64')
@@ -206,7 +207,7 @@ def generate_training_data_nw():
                                           'procedure_concept_id',
                                           'procedure_date',
                                           'procedure_type_concept_id',
-                                          'visit_occurrence_id'])
+                                          'visit_occurrence_id'], nrows=rows_limit)
 
     df['procedure_concept_id'] = df['procedure_concept_id'].astype('Int64')
     df['procedure_type_concept_id'] = df['procedure_type_concept_id'].astype('Int64')
@@ -240,7 +241,7 @@ def generate_training_data_nw():
                                           'drug_exposure_start_date',
                                           'drug_type_concept_id',
                                           'quantity',
-                                          'visit_occurrence_id'])
+                                          'visit_occurrence_id'], nrows=rows_limit)
 
     df['drug_concept_id'] = df['drug_concept_id'].astype('Int64')
     df['drug_type_concept_id'] = df['drug_type_concept_id'].astype('Int64')
@@ -276,7 +277,7 @@ def generate_training_data_nw():
                                           'observation_date',
                                           'observation_type_concept_id',
                                           'value_as_string',
-                                          'value_as_concept_id'])
+                                          'value_as_concept_id'], nrows=rows_limit)
 
     df['observation_concept_id'] = df['observation_concept_id'].astype('Int64')
     df['observation_type_concept_id'] = df['observation_type_concept_id'].astype('Int64')
