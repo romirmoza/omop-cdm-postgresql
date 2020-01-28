@@ -8,7 +8,7 @@ import pickle
 import warnings
 warnings.filterwarnings('ignore')
 
-rows_limit = 10000
+rows_limit = None
 concept_dir = '/app/concept_codes_final/'
 training_dir = '/train/'
 features_filepath = 'features.txt'
@@ -53,8 +53,8 @@ def aggregate_data(df, window_size, group_by_var, date_var, agg_dict, rename_dic
     if(calc_death):
         df['death_in_next_window'] = df.apply(lambda x: check_death_flag(x, window_size), axis=1)
         df['old'] = df.visit_start_date.dt.year - df.year_of_birth
-    df[date_var] = df['death_date'] - df[date_var]
-    df[date_var] = df[date_var].clip(upper=timedelta(days = 1000))
+    # df[date_var] = df['death_date'] - df[date_var]
+    # df[date_var] = df[date_var].clip(upper=timedelta(days = 1000))
     df_agg = df.groupby(group_by_var).agg(agg_dict).rename(columns=rename_dict)
     apply_cols = df.groupby(group_by_var).apply(lambda x: apply_func(x))
     df_agg = df_agg.join(apply_cols)
@@ -137,7 +137,6 @@ def generate_training_data_nw():
     window_size = timedelta(days = 180)
     agg_dict = {'person_id': 'max',
                 'year_of_birth': 'max',
-                'visit_start_date': 'min',
                 'ethnicity_concept_id': 'max',
                 'race_concept_id': 'max',
                 'gender_concept_id': 'max',
@@ -195,7 +194,6 @@ def generate_training_data_nw():
     df = pd.merge(df, death_data, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
-                'condition_start_date': 'min',
                 'condition_status_concept_id': 'max'}
 
     rename_dict = {'condition_start_date': 'days_since_latest_condition'}
@@ -229,8 +227,7 @@ def generate_training_data_nw():
 
     df = pd.merge(df, death_data, on=['person_id'], how='left')
 
-    agg_dict = {'person_id': 'max',
-                'procedure_date': 'min'}
+    agg_dict = {'person_id': 'max'}
 
     rename_dict = {'procedure_date': 'days_since_latest_procedure'}
 
@@ -265,7 +262,6 @@ def generate_training_data_nw():
     df = pd.merge(df, death_data, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
-                'drug_exposure_start_date': 'min',
                 'quantity': 'sum'}
 
     rename_dict = {'drug_exposure_start_date': 'days_since_latest_drug_exposure',
@@ -301,8 +297,7 @@ def generate_training_data_nw():
 
     df = pd.merge(df, death_data, on=['person_id'], how='left')
 
-    agg_dict = {'person_id': 'max',
-                'observation_date': 'min'}
+    agg_dict = {'person_id': 'max'}
 
     rename_dict = {'observation_date': 'days_since_latest_observation'}
 
