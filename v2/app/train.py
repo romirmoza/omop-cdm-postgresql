@@ -71,10 +71,12 @@ class OmopParser(object):
 
         xgb_model = xgb.train(params=params, dtrain=self.d_train,
                               num_boost_round=num_round, evals=watchlist,
+                              evals_result=evals_result,
                               early_stopping_rounds=50, verbose_eval=False)
 
 
         dump(xgb_model, self.modelfile)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"AUC score = "+str(evals_result['train_full']['auc'][xgb_model.best_iteration]), flush = True)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit end", flush = True)
         return
 
