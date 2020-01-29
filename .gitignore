@@ -3,3 +3,9 @@
 *.ipynb_checkpoints/
 *~
 *.pkl
+v2/local_*
+v2/train/
+v2/model/
+v2/infer/
+v2/output/
+v2/scratch/
