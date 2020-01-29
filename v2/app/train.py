@@ -94,7 +94,7 @@ class OmopParser(object):
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit start", flush = True)
 
         params = {
-            'eval_metric': 'auc',
+            'eval_metric': ['auc'],
             'tree_method' : 'auto',
             'random_state' : 1234,
             'reg_lambda' : 1.0,
@@ -136,9 +136,9 @@ class OmopParser(object):
 
         dump(xgb_model, self.modelfile)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+\
-              "Train AUC = "+str(evals_result['train']['auc'][xgb_model.best_iteration])+\
-              " Valid AUC = "+str(evals_result['valid']['auc'][xgb_model.best_iteration])+\
-              ' at '+str(xgb_model.best_iteration), flush = True)
+              "Train AUC = "+str(evals_result['train']['auc'][xgb_model.best_ntree_limit])+\
+              " Valid AUC = "+str(xgb_model.best_score)+\
+              ' at '+str(xgb_model.best_ntree_limit), flush = True)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit end", flush = True)
         return
 
