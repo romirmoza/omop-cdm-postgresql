@@ -109,8 +109,8 @@ class OmopParser(object):
 
 if __name__ == '__main__':
     FOLDER ='scratch/'
-    TEST_FILE_STR = 'test_all_nw.csv'
-    TRAIN_FILE_STR = 'train_all_nw.csv'
+    TEST_FILE_STR = 'test_all.csv'
+    TRAIN_FILE_STR = 'train_all.csv'
     op = OmopParser()
     op.load_data(ROOT+FOLDER+TEST_FILE_STR, ROOT+FOLDER+TRAIN_FILE_STR)
     op.xgb_predict()

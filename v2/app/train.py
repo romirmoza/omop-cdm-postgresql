@@ -129,8 +129,8 @@ class OmopParser(object):
         d_valid = xgb.DMatrix(X_valid, y_valid,  feature_names=self.train_features)
         watchlist = [(d_train, 'train'), (d_valid, 'valid')]
 
-        xgb_model = xgb.train(params=params, dtrain=d_train, num_boost_round=num_round, 
-                      evals=watchlist, evals_result=evals_result, 
+        xgb_model = xgb.train(params=params, dtrain=d_train, num_boost_round=num_round,
+                      evals=watchlist, evals_result=evals_result,
                       early_stopping_rounds=200, verbose_eval=False)
 
 
@@ -145,7 +145,7 @@ class OmopParser(object):
 
 if __name__ == '__main__':
     FOLDER = 'scratch/'
-    FILE_STR = 'train_all_nw.csv'
+    FILE_STR = 'train_all.csv'
     op = OmopParser()
     op.load_data(ROOT + FOLDER + FILE_STR)
     op.xgb_fit()
