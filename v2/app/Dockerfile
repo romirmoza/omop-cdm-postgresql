@@ -10,7 +10,8 @@ RUN pip install pandas \
   keras \
   tensorflow \
   eli5 \
-  joblib
+  joblib 
+RUN pip install psutil
 
 # Move to the app folder
 RUN mkdir /app

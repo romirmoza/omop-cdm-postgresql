@@ -1,4 +1,5 @@
 import os
+import psutil
 import datetime
 from operator import add
 import pandas as pd
@@ -59,11 +60,13 @@ class OmopParser(object):
     def __init__(self):
         self.name = 'omop_parser'
         self.modelfile = ROOT+'model/xgb_model.joblib'
+        self.process = psutil.Process(os.getpid())
         self.person_id = 0
         self.d_test = 0
 
     def load_data(self, test_filename, train_filename):
-        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer load data start", flush = True)
+        mem = self.process.memory_info()[0]/(1024**2)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer load data start::Mem Usage {:.2f} MB".format(mem),  flush = True)
         test = pd.read_csv(test_filename,low_memory = False)
         test = test.fillna(0)
         test.old = test.old.astype(int)
@@ -89,12 +92,14 @@ class OmopParser(object):
         X = np.array(X)
         y = np.array(y).ravel()
         self.d_test = xgb.DMatrix(X, y, feature_names=feature_names)
-        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer load data done", flush = True)
+        mem = self.process.memory_info()[0]/(1024**2)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer load data done::Mem Usage {:.2f} MB".format(mem),  flush = True)
         return
 
     def xgb_predict(self):
         '''infer with XGBoost'''
-        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer start", flush = True)
+        mem = self.process.memory_info()[0]/(1024**2)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer start::Mem Usage {:.2f} MB".format(mem),  flush = True)
         xgb_model =  load(self.modelfile)
 
         Y_pred = xgb_model.predict(self.d_test, ntree_limit=xgb_model.best_ntree_limit)
@@ -103,7 +108,8 @@ class OmopParser(object):
         output_prob.columns = ["person_id", "score"]
         output_prob.score = output_prob.score.clip(0.0,1.0)  # just in case
         output_prob.to_csv(ROOT+'output/predictions.csv', index = False)
-        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer finished", flush = True)
+        mem = self.process.memory_info()[0]/(1024**2)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer finished::Mem Usage {:.2f} MB".format(mem),  flush = True)
 
         return
 

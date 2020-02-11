@@ -1,5 +1,6 @@
 ## generate test data
 import os
+import psutil
 import pandas as pd
 from datetime import timedelta, datetime
 import re
@@ -8,7 +9,7 @@ import pickle
 import warnings
 warnings.filterwarnings('ignore')
 
-rows_limit = None
+rows_limit = 30000
 concept_dir = '/app/concept_codes_final/'
 training_dir = '/infer/'
 features_filepath = 'features.txt'
@@ -72,9 +73,12 @@ def window_data(df, window_size, window_start, group_by_var, date_var, agg_dict,
     return windowed_data
 
 def generate_test_data():
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate test data start", flush = True)
+    process = psutil.Process(os.getpid())
+    mem = process.memory_info()[0]/(1024**2)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate test data start::Mem Usage {:.2f} MB".format(mem), flush = True)
     filepath = training_dir + 'person.csv'
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading person data", flush = True)
+    mem = process.memory_info()[0]/(1024**2)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading person data::Mem Usage {:.2f} MB".format(mem),  flush = True)
     df_person = pd.read_csv(filepath, usecols = ['year_of_birth',
                                                  'ethnicity_concept_id',
                                                  'person_id',
@@ -82,8 +86,8 @@ def generate_test_data():
                                                  'day_of_birth',
                                                  'race_concept_id',
                                                  'gender_concept_id'], nrows=rows_limit)
-
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading visit_occurrence data", flush = True)
+    mem = process.memory_info()[0]/(1024**2)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading visit_occurrence data::Mem Usage {:.2f} MB".format(mem),  flush = True)
     filepath = filepath = training_dir + 'visit_occurrence.csv'
     df_visits = pd.read_csv(filepath, usecols=['person_id',
                                                'visit_start_date',
@@ -100,8 +104,8 @@ def generate_test_data():
     del df_visits
 
     filepath = concept_dir + 'all_concepts.csv'
-
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading all_concepts data", flush = True)
+    mem = process.memory_info()[0]/(1024**2)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading all_concepts data::Mem Usage {:.2f} MB".format(mem),  flush = True)
     df_concepts = pd.read_csv(filepath, usecols=['concept_name',
                                                  'concept_id',
                                                  'vocabulary_id'], nrows=rows_limit)
@@ -164,7 +168,8 @@ def generate_test_data():
     important_observations = re.findall(r"observation_concept_([0-9]+)", features)
 
     # Merge with condition_occurrence
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading condition_occurrence data", flush = True)
+    mem = process.memory_info()[0]/(1024**2)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading condition_occurrence data::Mem Usage {:.2f} MB".format(mem),  flush = True)
     filepath = training_dir + 'condition_occurrence.csv'
     df = pd.read_csv(filepath, usecols = ['condition_occurrence_id',
                                           'person_id',
@@ -204,7 +209,8 @@ def generate_test_data():
 
     # Merge with procedure_occurrence
     filepath = training_dir + 'procedure_occurrence.csv'
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading procedure_occurrence data", flush = True)
+    mem = process.memory_info()[0]/(1024**2)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading procedure_occurrence data::Mem Usage {:.2f} MB".format(mem),  flush = True)
     df = pd.read_csv(filepath, usecols = ['procedure_occurrence_id',
                                           'person_id',
                                           'procedure_concept_id',
@@ -235,7 +241,8 @@ def generate_test_data():
 
     # Merge with drug_exposure
     filepath = training_dir + 'drug_exposure.csv'
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading drug_exposure data", flush = True)
+    mem = process.memory_info()[0]/(1024**2)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading drug_exposure data::Mem Usage {:.2f} MB".format(mem),  flush = True)
     df = pd.read_csv(filepath, usecols = ['drug_exposure_id',
                                           'person_id',
                                           'drug_concept_id',
@@ -268,7 +275,8 @@ def generate_test_data():
 
     # Merge with oberservations
     filepath = training_dir + 'observation.csv'
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading observation data", flush = True)
+    mem = process.memory_info()[0]/(1024**2)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading observation data::Mem Usage {:.2f} MB".format(mem),  flush = True)
     df = pd.read_csv(filepath, usecols = ['observation_id',
                                           'person_id',
                                           'observation_concept_id',
@@ -306,7 +314,8 @@ def generate_test_data():
     col_num = train.shape[1]
 
     # unroll the _list columns and one-hot encode them
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Unrolling cols", flush = True)
+    mem = process.memory_info()[0]/(1024**2)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Unrolling cols::Mem Usage {:.2f} MB".format(mem),  flush = True)
     lists = [c for c in train.columns if '_list' in c]
     for idx, row in train.iterrows():
         for l in lists:
@@ -328,7 +337,8 @@ def generate_test_data():
     train.race_concept_name = train.race_concept_name.fillna('Unknown')
 
     train.to_csv('/scratch/test_all.csv', index=False)
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate test data end", flush = True)
+    mem = process.memory_info()[0]/(1024**2)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate test data end::Mem Usage {:.2f} MB".format(mem),  flush = True)
     return 0
 
 if __name__ == '__main__':

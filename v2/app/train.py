@@ -1,4 +1,5 @@
 import os
+import psutil
 import datetime
 import pandas as pd
 import numpy as np
@@ -60,11 +61,13 @@ class OmopParser(object):
         self.name = 'omop_parser'
         self.modelfile = ROOT+'model/xgb_model.joblib'
         self.train_features = 0
+        self.process = psutil.Process(os.getpid())
         self.X = 0
         self.y = 0
 
     def load_data(self, filename):
-        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data start", flush = True)
+        mem = self.process.memory_info()[0]/(1024**2)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data start::Mem Usage {:.2f} MB".format(mem), flush = True)
         train = pd.read_csv(filename,low_memory = False)
         train = train.fillna(0)
         train.old = train.old.astype(int)
@@ -82,7 +85,8 @@ class OmopParser(object):
         y = train[['death_in_next_window']]
         self.X = np.array(X)
         self.y = np.array(y).ravel()
-        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data end", flush = True)
+        mem = self.process.memory_info()[0]/(1024**2)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data end::Mem Usage {:.2f} MB".format(mem), flush = True)
         return
 
 
@@ -90,8 +94,8 @@ class OmopParser(object):
         '''
         apply XGB
         '''
-
-        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit start", flush = True)
+        mem = self.process.memory_info()[0]/(1024**2)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit start::Mem Usage {:.2f} MB".format(mem), flush = True)
 
         params = {
             'eval_metric': ['auc'],
@@ -135,11 +139,13 @@ class OmopParser(object):
 
 
         dump(xgb_model, self.modelfile)
+        mem = self.process.memory_info()[0]/(1024**2)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+\
               "Train AUC = "+str(evals_result['train']['auc'][xgb_model.best_ntree_limit])+\
               " Valid AUC = "+str(xgb_model.best_score)+\
               ' at '+str(xgb_model.best_ntree_limit), flush = True)
-        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit end", flush = True)
+        mem = self.process.memory_info()[0]/(1024**2)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit end::Mem Usage {:.2f} MB".format(mem), flush = True)
         return
 
 
