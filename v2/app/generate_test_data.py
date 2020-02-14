@@ -9,7 +9,8 @@ import pickle
 import warnings
 warnings.filterwarnings('ignore')
 
-rows_limit = 30000
+rows_limit = None
+use_features_subset = False
 concept_dir = '/app/concept_codes_final/'
 training_dir = '/infer/'
 features_filepath = 'features.txt'
@@ -27,28 +28,52 @@ def visit_types_count(x):
         ))
 
 def agg_condition_concept_id(x, important_features_set):
-    return pd.Series(dict(
-        condition_concept_id_list  = ', '.join(set(x.condition_concept_id).intersection(important_features_set)),
-        condition_type_concept_id_list  = ', '.join(set(x.condition_type_concept_id))
-        ))
+    if use_features_subset:
+        return pd.Series(dict(
+            condition_concept_id_list  = ', '.join(set(x.condition_concept_id).intersection(important_features_set)),
+            condition_type_concept_id_list  = ', '.join(set(x.condition_type_concept_id))
+            ))
+    else:
+        return pd.Series(dict(
+            condition_concept_id_list  = ', '.join(set(x.condition_concept_id)),
+            condition_type_concept_id_list  = ', '.join(set(x.condition_type_concept_id))
+            ))
 
 def agg_procedure_concept_id(x, important_features_set):
-    return pd.Series(dict(
-        procedure_concept_id_list  = ', '.join(set(x.procedure_concept_id).intersection(important_features_set)),
-        procedure_type_concept_id_list  = ', '.join(set(x.procedure_type_concept_id))
-        ))
+    if use_features_subset:
+        return pd.Series(dict(
+            procedure_concept_id_list  = ', '.join(set(x.procedure_concept_id).intersection(important_features_set)),
+            procedure_type_concept_id_list  = ', '.join(set(x.procedure_type_concept_id))
+            ))
+    else:
+        return pd.Series(dict(
+            procedure_concept_id_list  = ', '.join(set(x.procedure_concept_id)),
+            procedure_type_concept_id_list  = ', '.join(set(x.procedure_type_concept_id))
+            ))
 
 def agg_drug_concept_id(x, important_features_set):
-    return pd.Series(dict(
-        drug_concept_id_list  = ', '.join(set(x.drug_concept_id).intersection(important_features_set)),
-        drug_type_concept_id_list  = ', '.join(set(x.drug_type_concept_id))
-        ))
+    if use_features_subset:
+        return pd.Series(dict(
+            drug_concept_id_list  = ', '.join(set(x.drug_concept_id).intersection(important_features_set)),
+            drug_type_concept_id_list  = ', '.join(set(x.drug_type_concept_id))
+            ))
+    else:
+        return pd.Series(dict(
+            drug_concept_id_list  = ', '.join(set(x.drug_concept_id)),
+            drug_type_concept_id_list  = ', '.join(set(x.drug_type_concept_id))
+            ))
 
 def agg_observation_concept_id(x, important_features_set):
-    return pd.Series(dict(
-        observation_concept_id_list  = ', '.join(set(x.observation_concept_id).intersection(important_features_set)),
-        observation_type_concept_id_list  = ', '.join(set(x.observation_type_concept_id))
-        ))
+    if use_features_subset:
+        return pd.Series(dict(
+            observation_concept_id_list  = ', '.join(set(x.observation_concept_id).intersection(important_features_set)),
+            observation_type_concept_id_list  = ', '.join(set(x.observation_type_concept_id))
+            ))
+    else:
+        return pd.Series(dict(
+            observation_concept_id_list  = ', '.join(set(x.observation_concept_id)),
+            observation_type_concept_id_list  = ', '.join(set(x.observation_type_concept_id))
+            ))
 
 def window_data(df, window_size, window_start, group_by_var, date_var, agg_dict, rename_dict, apply_func, calc_death=0):
     window_id = 0
