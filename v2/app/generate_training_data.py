@@ -374,7 +374,7 @@ def generate_training_data():
     print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Unrolling cols::Mem Usage {:.2f} MB".format(mem), flush = True)
     lists = [c for c in train.columns if '_list' in c]
 
-    mlb = MultiLabelBinarizer()
+    mlb = MultiLabelBinarizer(sparse_output=True)
     for l in lists:
         train[l].fillna('', inplace=True)
         train[l] = train[l].astype(str)
