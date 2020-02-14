@@ -5,6 +5,7 @@ import pandas as pd
 from datetime import timedelta, datetime
 import re
 import pickle
+from sklearn.preprocessing import MultiLabelBinarizer
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -30,49 +31,49 @@ def visit_types_count(x):
 def agg_condition_concept_id(x, important_features_set):
     if use_features_subset:
         return pd.Series(dict(
-            condition_concept_id_list  = ', '.join(set(x.condition_concept_id).intersection(important_features_set)),
-            condition_type_concept_id_list  = ', '.join(set(x.condition_type_concept_id))
+            condition_concept_id_list  = ','.join(set(x.condition_concept_id).intersection(important_features_set)),
+            condition_type_concept_id_list  = ','.join(set(x.condition_type_concept_id))
             ))
     else:
         return pd.Series(dict(
-            condition_concept_id_list  = ', '.join(set(x.condition_concept_id)),
-            condition_type_concept_id_list  = ', '.join(set(x.condition_type_concept_id))
+            condition_concept_id_list  = ','.join(set(x.condition_concept_id)),
+            condition_type_concept_id_list  = ','.join(set(x.condition_type_concept_id))
             ))
 
 def agg_procedure_concept_id(x, important_features_set):
     if use_features_subset:
         return pd.Series(dict(
-            procedure_concept_id_list  = ', '.join(set(x.procedure_concept_id).intersection(important_features_set)),
-            procedure_type_concept_id_list  = ', '.join(set(x.procedure_type_concept_id))
+            procedure_concept_id_list  = ','.join(set(x.procedure_concept_id).intersection(important_features_set)),
+            procedure_type_concept_id_list  = ','.join(set(x.procedure_type_concept_id))
             ))
     else:
         return pd.Series(dict(
-            procedure_concept_id_list  = ', '.join(set(x.procedure_concept_id)),
-            procedure_type_concept_id_list  = ', '.join(set(x.procedure_type_concept_id))
+            procedure_concept_id_list  = ','.join(set(x.procedure_concept_id)),
+            procedure_type_concept_id_list  = ','.join(set(x.procedure_type_concept_id))
             ))
 
 def agg_drug_concept_id(x, important_features_set):
     if use_features_subset:
         return pd.Series(dict(
-            drug_concept_id_list  = ', '.join(set(x.drug_concept_id).intersection(important_features_set)),
-            drug_type_concept_id_list  = ', '.join(set(x.drug_type_concept_id))
+            drug_concept_id_list  = ','.join(set(x.drug_concept_id).intersection(important_features_set)),
+            drug_type_concept_id_list  = ','.join(set(x.drug_type_concept_id))
             ))
     else:
         return pd.Series(dict(
-            drug_concept_id_list  = ', '.join(set(x.drug_concept_id)),
-            drug_type_concept_id_list  = ', '.join(set(x.drug_type_concept_id))
+            drug_concept_id_list  = ','.join(set(x.drug_concept_id)),
+            drug_type_concept_id_list  = ','.join(set(x.drug_type_concept_id))
             ))
 
 def agg_observation_concept_id(x, important_features_set):
     if use_features_subset:
         return pd.Series(dict(
-            observation_concept_id_list  = ', '.join(set(x.observation_concept_id).intersection(important_features_set)),
-            observation_type_concept_id_list  = ', '.join(set(x.observation_type_concept_id))
+            observation_concept_id_list  = ','.join(set(x.observation_concept_id).intersection(important_features_set)),
+            observation_type_concept_id_list  = ','.join(set(x.observation_type_concept_id))
             ))
     else:
         return pd.Series(dict(
-            observation_concept_id_list  = ', '.join(set(x.observation_concept_id)),
-            observation_type_concept_id_list  = ', '.join(set(x.observation_type_concept_id))
+            observation_concept_id_list  = ','.join(set(x.observation_concept_id)),
+            observation_type_concept_id_list  = ','.join(set(x.observation_type_concept_id))
             ))
 
 def window_data(df, window_size, window_start, group_by_var, date_var, agg_dict, rename_dict, apply_func, calc_death=0):
@@ -366,23 +367,35 @@ def generate_training_data():
     # make a copy, preserve the original
     train = training_data.copy()
     col_num = train.shape[1]
+    train.to_csv('/scratch/train_all_pre_unroll.csv', index=False)
 
     # unroll the _list columns and one-hot encode them
     mem = process.memory_info()[0]/(1024**2)
     print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Unrolling cols::Mem Usage {:.2f} MB".format(mem), flush = True)
     lists = [c for c in train.columns if '_list' in c]
-    for idx, row in train.iterrows():
-        for l in lists:
-            l_str = '_'.join(l.split('_')[:2])+'_'
-            l_items = row[l]
-            if isinstance(l_items, str):
-                l_items = l_items.split(',')
-                if isinstance(l_items, list) and l_items != ['']:
-                    for c in l_items:
-                            train.loc[idx,l_str+str(c).strip()] = 1
 
-    train[col_num:].fillna(0, inplace=True)
-    train = train.drop(lists, axis=1)
+    mlb = MultiLabelBinarizer()
+    for l in lists:
+        train[l].fillna('', inplace=True)
+        train[l] = train[l].astype(str)
+        train[l] = train[l].str.split(',')
+        train = train.join(pd.DataFrame(mlb.fit_transform(train.pop(l)),
+                                        columns=l+'_'+mlb.classes_,
+                                        index=train.index))
+        train.drop(l+'_', axis=1, inplace=True)
+
+    # for idx, row in train.iterrows():
+    #     for l in lists:
+    #         l_str = '_'.join(l.split('_')[:2])+'_'
+    #         l_items = row[l]
+    #         if isinstance(l_items, str):
+    #             l_items = l_items.split(',')
+    #             if isinstance(l_items, list) and l_items != ['']:
+    #                 for c in l_items:
+    #                         train.loc[idx,l_str+str(c).strip()] = 1
+    # train[col_num:].fillna(0, inplace=True)
+    # train = train.drop(lists, axis=1)
+
     date_cols = [c for c in train.columns if 'days' in c]
     for c in date_cols:
         train[c] = pd.to_timedelta(train[c]).dt.days
