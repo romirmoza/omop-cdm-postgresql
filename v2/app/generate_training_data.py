@@ -379,9 +379,9 @@ def generate_training_data():
         train[l].fillna('', inplace=True)
         train[l] = train[l].astype(str)
         train[l] = train[l].str.split(',')
-        train = train.join(pd.DataFrame(mlb.fit_transform(train.pop(l)),
-                                        columns=l+'_'+mlb.classes_,
-                                        index=train.index))
+        train = train.join(pd.DataFrame.sparse.from_spmatrix(mlb.fit_transform(train.pop(l)),
+                                                             columns=l+'_'+mlb.classes_,
+                                                             index=train.index))
         train.drop(l+'_', axis=1, inplace=True)
 
     # for idx, row in train.iterrows():
