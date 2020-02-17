@@ -1,4 +1,5 @@
-# generate training data
+# generate data
+import sys
 import os
 import psutil
 import pandas as pd
@@ -10,10 +11,9 @@ from sklearn.preprocessing import MultiLabelBinarizer
 import warnings
 warnings.filterwarnings('ignore')
 
-rows_limit = None
-use_features_subset = False
+rows_limit = 30000
+use_features_subset = True
 concept_dir = '/app/concept_codes_final/'
-training_dir = '/train/'
 features_filepath = 'features.txt'
 
 def check_death_flag(x, window_size):
@@ -82,7 +82,8 @@ def window_data(df, window_size, window_start, group_by_var, date_var, agg_dict,
     while window_start < max_visit_start_date:
         df_window = df[(df[date_var] >= window_start) & (df[date_var] < window_start + window_size)]
         if(calc_death):
-            df_window['death_in_next_window'] = df_window.apply(lambda x: check_death_flag(x, window_size), axis=1)
+            if(step=='train'):
+                df_window['death_in_next_window'] = df_window.apply(lambda x: check_death_flag(x, window_size), axis=1)
             df_window['old'] = window_start.year - df_window.year_of_birth
 
         # df_window[date_var] = (window_start + window_size) - df_window[date_var]
@@ -99,15 +100,14 @@ def window_data(df, window_size, window_start, group_by_var, date_var, agg_dict,
         window_start += window_size
     return windowed_data
 
-def generate_training_data():
-    # import os
-    # print('now in', os.getcwd())
-    # for d in os.listdir(training_dir):
-    #     print(d)
-    # print('end listed files')
+def generate_data(step):
+    if(step=='train'):
+        training_dir = '/train/'
+    else:
+        training_dir = '/infer/'
     process = psutil.Process(os.getpid())
     mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate training data start::Mem Usage {:.2f} MB".format(mem), flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate "+step+" data start::Mem Usage {:.2f} MB".format(mem), flush = True)
     filepath = training_dir + 'person.csv'
     mem = process.memory_info()[0]/(1024**2)
     print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading person data::Mem Usage {:.2f} MB".format(mem), flush = True)
@@ -160,38 +160,60 @@ def generate_training_data():
     df_person_visits_race_concepts = \
     pd.merge(df_person_visits_race, df_concepts_visit, on=['visit_concept_id'], how='left')
 
-    filepath = training_dir + 'death.csv'
-    mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading death data::Mem Usage {:.2f} MB".format(mem), flush = True)
-    df_death = pd.read_csv(filepath, usecols=['person_id',
-                                              'death_date',
-                                              'death_datetime',
-                                              'death_type_concept_id'], nrows=rows_limit)
+    if(step=='train'):
+        filepath = training_dir + 'death.csv'
+        mem = process.memory_info()[0]/(1024**2)
+        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading death data::Mem Usage {:.2f} MB".format(mem), flush = True)
+        df_death = pd.read_csv(filepath, usecols=['person_id',
+                                                  'death_date',
+                                                  'death_datetime',
+                                                  'death_type_concept_id'], nrows=rows_limit)
 
-    df = pd.merge(df_person_visits_race_concepts, df_death, on=['person_id'], how='left')
+        df = pd.merge(df_person_visits_race_concepts, df_death, on=['person_id'], how='left')
+        del df_death
+    else:
+        df = df_person_visits_race_concepts
+    del df_person_visits_race_concepts
 
-    df[['visit_start_date','visit_end_date', 'death_date']] = \
-    df[['visit_start_date','visit_end_date', 'death_date']].apply(pd.to_datetime, format='%Y-%m-%d')
+    if(step=='train'):
+        df[['visit_start_date','visit_end_date', 'death_date']] = \
+        df[['visit_start_date','visit_end_date', 'death_date']].apply(pd.to_datetime, format='%Y-%m-%d')
+        df['death_date'] = df['death_date'].fillna(pd.Timestamp.max)
+        death_data = df[['person_id', 'death_date']]
+    else:
+        df[['visit_start_date','visit_end_date']] = \
+        df[['visit_start_date','visit_end_date']].apply(pd.to_datetime, format='%Y-%m-%d')
+
     df['visit_duration'] = df['visit_end_date'] - df['visit_start_date']
-
     df['visit_end_date'] = df['visit_end_date'].fillna(df['visit_start_date'])
-    df['death_date'] = df['death_date'].fillna(pd.Timestamp.max)
-    death_data = df[['person_id', 'death_date']]
 
     min_visit_start_date =  df['visit_start_date'].min()
     window_start = min_visit_start_date
     window_size = timedelta(days = 180)
-    agg_dict = {'person_id': 'max',
-                'year_of_birth': 'max',
-                'ethnicity_concept_id': 'max',
-                'race_concept_id': 'max',
-                'gender_concept_id': 'max',
-                'race_concept_name': 'max',
-                'visit_occurrence_id': 'nunique',
-                'visit_concept_name': 'count',
-                'visit_duration': 'sum',
-                'death_in_next_window': 'max',
-                'old': 'max'}
+
+    if(step=='train'):
+        agg_dict = {'person_id': 'max',
+                    'year_of_birth': 'max',
+                    'ethnicity_concept_id': 'max',
+                    'race_concept_id': 'max',
+                    'gender_concept_id': 'max',
+                    'race_concept_name': 'max',
+                    'visit_occurrence_id': 'nunique',
+                    'visit_concept_name': 'count',
+                    'visit_duration': 'sum',
+                    'death_in_next_window': 'max',
+                    'old': 'max'}
+    else:
+        agg_dict = {'person_id': 'max',
+                    'year_of_birth': 'max',
+                    'ethnicity_concept_id': 'max',
+                    'race_concept_id': 'max',
+                    'gender_concept_id': 'max',
+                    'race_concept_name': 'max',
+                    'visit_occurrence_id': 'nunique',
+                    'visit_concept_name': 'count',
+                    'visit_duration': 'sum',
+                    'old': 'max'}
 
     rename_dict = {'visit_occurrence_id': 'number_of_visits',
                    'visit_start_date': 'days_since_latest_visit'}
@@ -238,7 +260,8 @@ def generate_training_data():
     df[['condition_start_date','condition_end_date']] = \
     df[['condition_start_date','condition_end_date']].apply(pd.to_datetime, format='%Y-%m-%d')
 
-    df = pd.merge(df, death_data, on=['person_id'], how='left')
+    if(step=='train'):
+        df = pd.merge(df, death_data, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
                 'condition_status_concept_id': 'max'}
@@ -273,7 +296,8 @@ def generate_training_data():
     df['procedure_concept_id'] = df['procedure_concept_id'].apply(str)
     df['procedure_type_concept_id'] = df['procedure_type_concept_id'].apply(str)
 
-    df = pd.merge(df, death_data, on=['person_id'], how='left')
+    if(step=='train'):
+        df = pd.merge(df, death_data, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max'}
 
@@ -308,7 +332,8 @@ def generate_training_data():
     df['drug_concept_id'] = df['drug_concept_id'].apply(str)
     df['drug_type_concept_id'] = df['drug_type_concept_id'].apply(str)
 
-    df = pd.merge(df, death_data, on=['person_id'], how='left')
+    if(step=='train'):
+        df = pd.merge(df, death_data, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
                 'quantity': 'sum'}
@@ -345,7 +370,8 @@ def generate_training_data():
     df['observation_concept_id'] = df['observation_concept_id'].apply(str)
     df['observation_type_concept_id'] = df['observation_type_concept_id'].apply(str)
 
-    df = pd.merge(df, death_data, on=['person_id'], how='left')
+    if(step=='train'):
+        df = pd.merge(df, death_data, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max'}
 
@@ -362,12 +388,15 @@ def generate_training_data():
 
     training_data = pd.merge(training_data, observation_data, on=['person_id', 'window_id'], how='left')
     del observation_data
-    training_data = training_data.drop(columns=['window_id'])
+
+    if(step=='test'):
+        training_data = training_data.sort_values(by=['window_id'])
+        training_data.drop_duplicates(subset='person_id', keep='last', inplace=True)
 
     # make a copy, preserve the original
     train = training_data.copy()
     col_num = train.shape[1]
-    
+
     # unroll the _list columns and one-hot encode them
     mem = process.memory_info()[0]/(1024**2)
     print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Unrolling cols::Mem Usage {:.2f} MB".format(mem), flush = True)
@@ -381,7 +410,7 @@ def generate_training_data():
         train = train.join(pd.DataFrame.sparse.from_spmatrix(mlb.fit_transform(train.pop(l)),
                                                              columns=l+'_'+mlb.classes_,
                                                              index=train.index))
-        train.drop(l+'_', axis=1, inplace=True)
+        train.drop(l+'_', axis=1, inplace=True, errors='ignore')
 
     # for idx, row in train.iterrows():
     #     for l in lists:
@@ -402,10 +431,11 @@ def generate_training_data():
     train.race_concept_name = train.race_concept_name.replace(to_replace=0, value='Unknown')
     train.race_concept_name = train.race_concept_name.fillna('Unknown')
 
-    train.to_csv('/scratch/train_all.csv', index=False, compression='gzip')
+    train.to_csv('/scratch/'+step+'_all.csv', index=False, compression='gzip')
     mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate training data end::Mem Usage {:.2f} MB".format(mem), flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate "+step+" data end::Mem Usage {:.2f} MB".format(mem), flush = True)
     return 0
 
 if __name__ == '__main__':
-    generate_training_data()
+    step = sys.argv[1]
+    generate_data(step)

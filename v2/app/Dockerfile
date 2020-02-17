@@ -10,7 +10,7 @@ RUN pip install pandas \
   keras \
   tensorflow \
   eli5 \
-  joblib 
+  joblib
 RUN pip install psutil
 
 # Move to the app folder
@@ -26,8 +26,7 @@ COPY ./train.sh .
 COPY ./infer.sh .
 
 # Copy Support files
-COPY ./generate_training_data.py .
-COPY ./generate_test_data.py .
+COPY ./generate_data.py .
 COPY ./features.txt .
 RUN mkdir concept_codes_final
 COPY ./concept_codes_final/all_concepts.csv ./concept_codes_final

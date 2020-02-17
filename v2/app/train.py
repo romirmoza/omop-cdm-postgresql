@@ -68,7 +68,7 @@ class OmopParser(object):
     def load_data(self, filename):
         mem = self.process.memory_info()[0]/(1024**2)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data start::Mem Usage {:.2f} MB".format(mem), flush = True)
-        train = pd.read_csv(filename,low_memory = False)
+        train = pd.read_csv(filename, compression='gzip', low_memory = False)
         train = train.fillna(0)
         train.old = train.old.astype(int)
         for c in train.columns[train.columns.str.startswith('days')]:

@@ -1,4 +1,4 @@
 
 #!/usr/bin/env bash
-python /app/generate_training_data.py
+python /app/generate_data.py 'train'
 python /app/train.py

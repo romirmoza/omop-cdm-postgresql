@@ -1,4 +1,4 @@
 
 #!/usr/bin/env bash
-python /app/generate_test_data.py
+python /app/generate_data.py 'test'
 python /app/infer.py

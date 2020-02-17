@@ -67,7 +67,7 @@ class OmopParser(object):
     def load_data(self, test_filename, train_filename):
         mem = self.process.memory_info()[0]/(1024**2)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Infer load data start::Mem Usage {:.2f} MB".format(mem),  flush = True)
-        test = pd.read_csv(test_filename,low_memory = False)
+        test = pd.read_csv(test_filename, compression='gzip', low_memory = False)
         test = test.fillna(0)
         test.old = test.old.astype(int)
         for c in test.columns[test.columns.str.startswith('days')]:
@@ -81,7 +81,7 @@ class OmopParser(object):
         test = test.fillna(0)
         self.person_id = test.person_id
         # order the columnns of the test set like the train set
-        train_features = pd.read_csv(train_filename, nrows=1).columns.values
+        train_features = pd.read_csv(train_filename, compression='gzip', nrows=1).columns.values
         for feature in train_features:
             if feature not in test.columns:
                 test[feature] = np.nan
