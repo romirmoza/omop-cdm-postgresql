@@ -373,7 +373,7 @@ def generate_test_data():
     train.race_concept_name = train.race_concept_name.replace(to_replace=0, value='Unknown')
     train.race_concept_name = train.race_concept_name.fillna('Unknown')
 
-    train.to_csv('/scratch/test_all.csv', index=False)
+    train.to_csv('/scratch/test_all.csv', index=False, compression='gzip')
     mem = process.memory_info()[0]/(1024**2)
     print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate test data end::Mem Usage {:.2f} MB".format(mem),  flush = True)
     return 0
