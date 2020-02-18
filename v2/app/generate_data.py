@@ -11,7 +11,7 @@ from sklearn.preprocessing import MultiLabelBinarizer
 import warnings
 warnings.filterwarnings('ignore')
 
-rows_limit = 30000
+rows_limit = None
 use_features_subset = True
 concept_dir = '/app/concept_codes_final/'
 features_filepath = 'features.txt'
@@ -100,11 +100,7 @@ def window_data(df, window_size, window_start, group_by_var, date_var, agg_dict,
         window_start += window_size
     return windowed_data
 
-def generate_data(step):
-    if(step=='train'):
-        training_dir = '/train/'
-    else:
-        training_dir = '/infer/'
+def generate_data(step, training_dir, savefile_name):
     process = psutil.Process(os.getpid())
     mem = process.memory_info()[0]/(1024**2)
     print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate "+step+" data start::Mem Usage {:.2f} MB".format(mem), flush = True)
@@ -431,11 +427,13 @@ def generate_data(step):
     train.race_concept_name = train.race_concept_name.replace(to_replace=0, value='Unknown')
     train.race_concept_name = train.race_concept_name.fillna('Unknown')
 
-    train.to_csv('/scratch/'+step+'_all.csv', index=False, compression='gzip')
+    train.to_csv('/scratch/'+savefile_name, index=False, compression='gzip')
     mem = process.memory_info()[0]/(1024**2)
     print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate "+step+" data end::Mem Usage {:.2f} MB".format(mem), flush = True)
     return 0
 
 if __name__ == '__main__':
     step = sys.argv[1]
-    generate_data(step)
+    training_dir = sys.argv[2]
+    savefile_name = sys.argv[3]
+    generate_data(step, training_dir, savefile_name)

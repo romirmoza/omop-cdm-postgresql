@@ -151,7 +151,7 @@ class OmopParser(object):
 
 if __name__ == '__main__':
     FOLDER = 'scratch/'
-    FILE_STR = 'train_all.csv'
+    FILE_STR = 'train_all.csv.gz'
     op = OmopParser()
     op.load_data(ROOT + FOLDER + FILE_STR)
     op.xgb_fit()
