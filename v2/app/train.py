@@ -7,53 +7,9 @@ from datetime import datetime
 import sklearn as skl
 from joblib import dump
 import xgboost as xgb
+from automl import *
 
 ROOT="/"
-
-def reduce_mem_usage(df):
-    start_mem = df.memory_usage().sum() / 1024**2
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+'Memory usage of dataframe is {:.2f} MB'.format(start_mem))
-
-    for col in df.columns:
-        col_type = df[col].dtype
-        if col_type != object and col_type :
-                c_min = df[col].min()
-                c_max = df[col].max()
-                c_unique = len(df[col].unique())
-
-                if str(col_type)[:3] == 'int':
-                    if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
-                        df[col] = df[col].astype(np.int8)
-                    elif c_min > np.iinfo(np.uint8).min and c_max < np.iinfo(np.uint8).max:
-                        df[col] = df[col].astype(np.uint8)
-                    elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
-                        df[col] = df[col].astype(np.int16)
-                    elif c_min > np.iinfo(np.uint16).min and c_max < np.iinfo(np.uint16).max:
-                        df[col] = df[col].astype(np.uint16)
-                    elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
-                        df[col] = df[col].astype(np.int32)
-                    elif c_min > np.iinfo(np.uint32).min and c_max < np.iinfo(np.uint32).max:
-                        df[col] = df[col].astype(np.uint32)
-                    elif c_min > np.iinfo(np.int64).min and c_max < np.iinfo(np.int64).max:
-                        df[col] = df[col].astype(np.int64)
-                    elif c_min > np.iinfo(np.uint64).min and c_max < np.iinfo(np.uint64).max:
-                        df[col] = df[col].astype(np.uint64)
-                else:
-                    if c_min > np.finfo(np.float16).min and c_max < np.finfo(np.float16).max:
-                        df[col] = df[col].astype(np.float16)
-                    elif c_min > np.finfo(np.float32).min and c_max < np.finfo(np.float32).max:
-                        df[col] = df[col].astype(np.float32)
-                    else:
-                        df[col] = df[col].astype(np.float64)
-
-                if c_min == 0.0 and c_max == 1.0 and c_unique == 2:
-                    df[col] = df[col].astype(bool)
-                    pass
-
-    end_mem = df.memory_usage().sum() / 1024**2
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+'Memory usage after optimization is: {:.2f} MB'.format(end_mem))
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+'Decreased by {:.1f}%'.format(100 * (start_mem - end_mem) / start_mem))
-    return df
 
 class OmopParser(object):
 
@@ -62,9 +18,9 @@ class OmopParser(object):
         self.modelfile = ROOT+'model/xgb_model.joblib'
         self.train_features = 0
         self.process = psutil.Process(os.getpid())
-        self.X = 0
-        self.y = 0
+        self.train = 0
 
+        
     def load_data(self, filename):
         mem = self.process.memory_info()[0]/(1024**2)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data start::Mem Usage {:.2f} MB".format(mem), flush = True)
@@ -80,11 +36,8 @@ class OmopParser(object):
         label_encoder = label_encoder.fit(train.race_concept_name)
         train.race_concept_name = label_encoder.transform(train.race_concept_name)
         train = train.fillna(0)
-        X = train.drop(['death_in_next_window','person_id'], axis = 1)
-        self.train_features = X.columns.values
-        y = train[['death_in_next_window']]
-        self.X = np.array(X)
-        self.y = np.array(y).ravel()
+        self.train = train
+        
         mem = self.process.memory_info()[0]/(1024**2)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data end::Mem Usage {:.2f} MB".format(mem), flush = True)
         return
@@ -97,53 +50,71 @@ class OmopParser(object):
         mem = self.process.memory_info()[0]/(1024**2)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit start::Mem Usage {:.2f} MB".format(mem), flush = True)
 
+        imbalance = int(round(self.train.shape[0] / self.train.death_in_next_window.sum()))
+        random_state = 1234
+        num_round = 500
+        early_stop = round(num_round / 5)  # 20% of the full rounds
+
         params = {
+            'objective': 'binary:logistic',
+            'booster': 'gbtree',
             'eval_metric': ['auc'],
             'tree_method' : 'auto',
-            'random_state' : 1234,
+            'random_state' : random_state,
             'reg_lambda' : 1.0,
             'min_child_weight' : 1.0,
             'max_bin' : 256,
             'min_split_loss' : 0.01,
-            'max_depth' : 10,
+            'max_depth' : 15,
             'reg_alpha' : 0.0,
             'colsample_bylevel' : 1.0,
-            'scale_pos_weight' : 1.0,
+            'scale_pos_weight' : imbalance,
             'max_delta_step' : 0.0,
             'learning_rate' : 0.05,
             'n_estimators' : 1000,
             'num_parallel_tree' : 1,
-            'colsample_bytree' : 0.5,
+            'colsample_bytree' : 0.7,
             'subsample' : 1.0,
-            'n_jobs': -1.0,
+            'missing': 0,
         }
 
-        num_round = 2000
+        drop_features = ['death_in_next_window', 'window_id', 'person_id']
 
-        from sklearn.model_selection import StratifiedShuffleSplit
-        sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=1234)
+        xgb_model = None # clear out the xgb_model
+        for w in self.train.window_id.unique():
+            X = self.train[self.train.window_id == w] 
+            y = self.train[self.train.window_id == w].death_in_next_window
+            X = X.drop(drop_features, axis=1)
+            self.train_features = X.columns.values
+            X = np.array(X)
+            y = np.array(y).ravel()
+            cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=random_state)
+            for i, (train_index, valid_index) in enumerate(cv.split(X, y)):
+                X_train, X_valid = X[train_index], X[valid_index]
+                y_train, y_valid = y[train_index], y[valid_index]
+                evals_result ={}
+                # Convert our data into XGBoost format
+                d_train = xgb.DMatrix(X_train, y_train, feature_names=self.train_features)
+                d_valid = xgb.DMatrix(X_valid, y_valid,  feature_names=self.train_features)
+                watchlist = [(d_train, 'train'), (d_valid, 'valid')]
 
-        for train_index, valid_index in sss.split(self.X, self.y):
-            X_train, X_valid = self.X[train_index], self.X[valid_index]
-            y_train, y_valid = self.y[train_index], self.y[valid_index]
+                xgb_model = xgb.train(params=params, dtrain=d_train, num_boost_round=num_round, 
+                              evals=watchlist, evals_result=evals_result, 
+                              early_stopping_rounds=early_stop, verbose_eval=False,
+                              xgb_model=xgb_model)
 
+                print("Best Score:%f, best iteration:%d, best ntree:%d" % 
+                      (xgb_model.best_score, xgb_model.best_iteration, xgb_model.best_ntree_limit))
+                gc.collect()
+        
 
-        evals_result ={}
-        d_train = xgb.DMatrix(X_train, y_train, feature_names=self.train_features)
-        d_valid = xgb.DMatrix(X_valid, y_valid,  feature_names=self.train_features)
-        watchlist = [(d_train, 'train'), (d_valid, 'valid')]
-
-        xgb_model = xgb.train(params=params, dtrain=d_train, num_boost_round=num_round,
-                      evals=watchlist, evals_result=evals_result,
-                      early_stopping_rounds=200, verbose_eval=False)
-
-
-        dump(xgb_model, self.modelfile)
-        mem = self.process.memory_info()[0]/(1024**2)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+\
               "Train AUC = "+str(evals_result['train']['auc'][xgb_model.best_ntree_limit])+\
               " Valid AUC = "+str(xgb_model.best_score)+\
               ' at '+str(xgb_model.best_ntree_limit), flush = True)
+
+        dump(xgb_model, self.modelfile)
+
         mem = self.process.memory_info()[0]/(1024**2)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train fit end::Mem Usage {:.2f} MB".format(mem), flush = True)
         return
