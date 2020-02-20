@@ -24,7 +24,6 @@ import xgboost as xgb
 from sklearn.metrics import roc_auc_score, auc
 from sklearn.metrics import plot_roc_curve  # only sklearn after version 0.22 
 from sklearn.metrics import precision_recall_curve
-from scikitplot.metrics import plot_precision_recall_curve
 from sklearn.metrics import average_precision_score
 
 def print_manifest():
