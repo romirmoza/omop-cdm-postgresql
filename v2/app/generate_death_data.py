@@ -17,7 +17,7 @@ concept_dir = '/app/concept_codes_final/'
 features_filepath = 'features.txt'
 
 def check_death_flag(x, window_size):
-    if x.death_date - x.visit_start_date < window_size and x.death_date - x.visit_start_date >= timedelta(days = 0):
+    if x.death_date - x.max_visit_start_date < window_size and x.death_date - x.max_visit_start_date >= timedelta(days = 0):
         return 1
     return 0
 
@@ -76,37 +76,28 @@ def agg_observation_concept_id(x, important_features_set):
             observation_type_concept_id_list  = ','.join(set(x.observation_type_concept_id))
             ))
 
-def window_data(df, window_size, window_start, group_by_var, date_var, agg_dict, rename_dict, apply_func, calc_death=0):
-    window_id = 0
-    max_visit_start_date =  df[date_var].max()
-    while window_start < max_visit_start_date:
-        df_window = df[(df[date_var] >= window_start) & (df[date_var] < window_start + window_size)]
-        if(calc_death):
-            if(step=='train'):
-                df_window['death_in_next_window'] = df_window.apply(lambda x: check_death_flag(x, window_size), axis=1)
-            df_window['old'] = window_start.year - df_window.year_of_birth
+# Generates only the data for the 6 months prior to last visit for each patient
+def latest_data(df, window_size, last_visit, group_by_var, date_var, agg_dict, rename_dict, apply_func, calc_death=0):
+    df_window = df[(df[date_var] > (df.max_visit_start_date - window_size)) & (df[date_var] <= df.max_visit_start_date)]
+    if(calc_death):
+        if(step=='train'):
+            df_window['death_in_next_window'] = df_window.apply(lambda x: check_death_flag(x, window_size), axis=1)
+        df_window['old'] = df_window.max_visit_start_date.dt.year - df_window.year_of_birth
 
-        # df_window[date_var] = (window_start + window_size) - df_window[date_var]
-        df_agg = df_window.groupby(group_by_var).agg(agg_dict).rename(columns=rename_dict)
-        apply_cols = df_window.groupby(group_by_var).apply(lambda x: apply_func(x))
-        df_agg = df_agg.join(apply_cols)
-        df_agg['window_id'] = window_id
-        df_agg.reset_index(drop=True)
-        if not window_id:
-            windowed_data = df_agg.copy()
-        else:
-            windowed_data = pd.concat([windowed_data, df_agg], ignore_index=True)
-        window_id += 1
-        window_start += window_size
-    return windowed_data
+    # df_window[date_var] = (window_start + window_size) - df_window[date_var]
+    df_agg = df_window.groupby(group_by_var).agg(agg_dict).rename(columns=rename_dict)
+    apply_cols = df_window.groupby(group_by_var).apply(lambda x: apply_func(x))
+    df_agg = df_agg.join(apply_cols)
+    df_agg = df_agg.reset_index(drop=True)
+    return df_agg
 
 def generate_data(step, training_dir, savefile_name):
     process = psutil.Process(os.getpid())
     mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate "+step+" data start::Mem Usage {:.2f} MB".format(mem), flush = True)
+    print(str(pd.datetime.now())+"::"+"::"+"Generate "+step+" data start::Mem Usage {:.2f} MB".format(mem), flush = True)
     filepath = training_dir + 'person.csv'
     mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading person data::Mem Usage {:.2f} MB".format(mem), flush = True)
+    print(str(pd.datetime.now())+"::"+"::"+"Reading person data::Mem Usage {:.2f} MB".format(mem), flush = True)
     df_person = pd.read_csv(filepath, usecols = ['year_of_birth',
                                                  'ethnicity_concept_id',
                                                  'person_id',
@@ -116,7 +107,7 @@ def generate_data(step, training_dir, savefile_name):
                                                  'gender_concept_id'], nrows=rows_limit)
 
     mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading visit_occurrence data::Mem Usage {:.2f} MB".format(mem), flush = True)
+    print(str(pd.datetime.now())+"::"+"::"+"Reading visit_occurrence data::Mem Usage {:.2f} MB".format(mem), flush = True)
     filepath = filepath = training_dir + 'visit_occurrence.csv'
     df_visits = pd.read_csv(filepath, usecols=['person_id',
                                                'visit_start_date',
@@ -135,7 +126,7 @@ def generate_data(step, training_dir, savefile_name):
     filepath = concept_dir + 'all_concepts.csv'
 
     mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading all_concepts data::Mem Usage {:.2f} MB".format(mem), flush = True)
+    print(str(pd.datetime.now())+"::"+"::"+"Reading all_concepts data::Mem Usage {:.2f} MB".format(mem), flush = True)
     df_concepts = pd.read_csv(filepath, usecols=['concept_name',
                                                  'concept_id',
                                                  'vocabulary_id'], nrows=rows_limit)
@@ -159,7 +150,7 @@ def generate_data(step, training_dir, savefile_name):
     if(step=='train'):
         filepath = training_dir + 'death.csv'
         mem = process.memory_info()[0]/(1024**2)
-        print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading death data::Mem Usage {:.2f} MB".format(mem), flush = True)
+        print(str(pd.datetime.now())+"::"+"::"+"Reading death data::Mem Usage {:.2f} MB".format(mem), flush = True)
         df_death = pd.read_csv(filepath, usecols=['person_id',
                                                   'death_date',
                                                   'death_datetime',
@@ -182,9 +173,10 @@ def generate_data(step, training_dir, savefile_name):
 
     df['visit_duration'] = df['visit_end_date'] - df['visit_start_date']
     df['visit_end_date'] = df['visit_end_date'].fillna(df['visit_start_date'])
+    df['max_visit_start_date'] = df.groupby('person_id')['visit_start_date'].transform(max)
 
-    min_visit_start_date =  df['visit_start_date'].min()
-    window_start = min_visit_start_date
+    last_visit = df.groupby('person_id')['visit_start_date'].max().to_frame().reset_index()
+    last_visit = last_visit.rename(columns={'visit_start_date': 'max_visit_start_date'})
     window_size = timedelta(days = 180)
 
     if(step=='train'):
@@ -219,7 +211,7 @@ def generate_data(step, training_dir, savefile_name):
     apply_func = visit_types_count
 
     training_data = \
-    window_data(df, window_size, window_start, group_by_var, date_var, agg_dict, rename_dict, apply_func, 1)
+    latest_data(df, window_size, last_visit, group_by_var, date_var, agg_dict, rename_dict, apply_func, 1)
     training_data = training_data.drop(['year_of_birth'], axis=1)
 
     # Import
@@ -258,6 +250,7 @@ def generate_data(step, training_dir, savefile_name):
 
     if(step=='train'):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
+        df = pd.merge(df, last_visit, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
                 'condition_status_concept_id': 'max'}
@@ -271,9 +264,9 @@ def generate_data(step, training_dir, savefile_name):
 
     df.condition_start_date = pd.to_datetime(df.condition_start_date, format='%Y-%m-%d')
     cond_occur_data = \
-    window_data(df, window_size, window_start, group_by_var, date_var, agg_dict, rename_dict, apply_func)
+    latest_data(df, window_size, last_visit, group_by_var, date_var, agg_dict, rename_dict, apply_func)
 
-    training_data = pd.merge(training_data, cond_occur_data, on=['person_id', 'window_id'], how='left')
+    training_data = pd.merge(training_data, cond_occur_data, on=['person_id'], how='left')
     del cond_occur_data
 
     # Merge with procedure_occurrence
@@ -294,6 +287,7 @@ def generate_data(step, training_dir, savefile_name):
 
     if(step=='train'):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
+        df = pd.merge(df, last_visit, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max'}
 
@@ -306,9 +300,9 @@ def generate_data(step, training_dir, savefile_name):
 
     df.procedure_date = pd.to_datetime(df.procedure_date, format='%Y-%m-%d')
     procedure_occur_data = \
-    window_data(df, window_size, window_start, group_by_var, date_var, agg_dict, rename_dict, apply_func)
+    latest_data(df, window_size, last_visit, group_by_var, date_var, agg_dict, rename_dict, apply_func)
 
-    training_data = pd.merge(training_data, procedure_occur_data, on=['person_id', 'window_id'], how='left')
+    training_data = pd.merge(training_data, procedure_occur_data, on=['person_id'], how='left')
     del procedure_occur_data
 
     # Merge with drug_exposure
@@ -330,6 +324,7 @@ def generate_data(step, training_dir, savefile_name):
 
     if(step=='train'):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
+        df = pd.merge(df, last_visit, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
                 'quantity': 'sum'}
@@ -344,9 +339,9 @@ def generate_data(step, training_dir, savefile_name):
 
     df.drug_exposure_start_date = pd.to_datetime(df.drug_exposure_start_date, format='%Y-%m-%d')
     drug_exposure_data = \
-    window_data(df, window_size, window_start, group_by_var, date_var, agg_dict, rename_dict, apply_func)
+    latest_data(df, window_size, last_visit, group_by_var, date_var, agg_dict, rename_dict, apply_func)
 
-    training_data = pd.merge(training_data, drug_exposure_data, on=['person_id', 'window_id'], how='left')
+    training_data = pd.merge(training_data, drug_exposure_data, on=['person_id'], how='left')
     del drug_exposure_data
 
     # Merge with oberservations
@@ -368,6 +363,7 @@ def generate_data(step, training_dir, savefile_name):
 
     if(step=='train'):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
+        df = pd.merge(df, last_visit, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max'}
 
@@ -380,9 +376,9 @@ def generate_data(step, training_dir, savefile_name):
 
     df.observation_date = pd.to_datetime(df.observation_date, format='%Y-%m-%d')
     observation_data = \
-    window_data(df, window_size, window_start, group_by_var, date_var, agg_dict, rename_dict, apply_func)
+    latest_data(df, window_size, last_visit, group_by_var, date_var, agg_dict, rename_dict, apply_func)
 
-    training_data = pd.merge(training_data, observation_data, on=['person_id', 'window_id'], how='left')
+    training_data = pd.merge(training_data, observation_data, on=['person_id'], how='left')
     del observation_data
 
     if(step=='test'):
