@@ -18,17 +18,17 @@ The problem is that very few commercial AutoML systems are deployable to a site;
 
 ## Methods
 
-- Data ingestion
+- Data ingestion:
 We started out using PostgreSQL for data management but quickly realized it wasn't all that necessary. We settled on ingesting data from the csv files provided, directly into our python model. We load in the patient data provided to us in the person, visit_occurence, condition_occurence, procedure_occurence, observation, and drug_exposure files and merge in based on person ids.
-- Feature engineering
+- Feature engineering:
 We aggregate the data for each person (visit, condition, procedure, drugs etc) and split the data for each person in time windows of 6 months. Our rationale was that data that is too far into the past is not meaningful to predicting mortality of the patient. We arrived at the window size of 6 months through extensive testing. Since most of these columns are categorical, we one hot encode them after aggregation. It's important to note though, that this method exasperates the problem of imbalanced classes (death, not death) in the data. For our target variable, "death_in_next_window" we lookup death date for persons who passed away within 6 months of the last time window.
-- Feature selection
+- Feature selection:
 Running our first models, we realized that the feature space we had was too big for a model to run in a reasonable amount of time. So, we did regression analysis using Extra Trees Classifier, Random Forest Classifier, and Alternating conditional expectations (ACE) algorithms to generate feature importances and only selecting the top 200.
-- Model selection
+- Model selection:
 We used the autoML approach to find the models that performed the best on our training data. Tree based models seemed to do better than all the others and we eventually settled on XGBoost which performed the best.
-- Cross-validation
+- Cross-validation:
 Since the target classes are highly imbalanced we use a Stratified shuffles split to split the training data.
-- Hyperparameter optimization
+- Hyperparameter optimization:
 We then perform a randomized grid search on the hyperparameter space for our models.
 
 ## Conclusion/Discussion
