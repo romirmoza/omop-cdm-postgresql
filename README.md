@@ -1,11 +1,10 @@
 # EHR DREAM Challenge - Patient Mortality Prediction
 =================
-- by tema EHR_noobs
+- by team EHR_noobs
 - Romir Moza, Paul Perry,
 - Navya Network, Inc
 
 ## Summary:
-
 Gradient Boosting application for Mortality prediction.
 
 ## Background/Introduction
@@ -36,10 +35,17 @@ We then perform a randomized grid search on the hyperparameter space for our mod
 
 The challenge was an interesting experience. First off, it gave us insight into the platform itself. This being our first challenge on synapse it took us some effort packaging the code for docker and running it on your servers.
 We understand now that domain knowledge and the OMOP hierarchy needs to be used for feature engineering and selection to be able to get anywhere with the prediction model.
+
 ## References
 
-Justin Guinney, [EHR DREAM Challenge - Patient Mortality Prediction](https://www.synapse.org/#!Synapse:syn18405991/wiki/589657),
+- Justin Guinney, [EHR DREAM Challenge - Patient Mortality Prediction](https://www.synapse.org/#!Synapse:syn18405991/wiki/589657),
 [DOI: 10.7303/syn18405991](https://doi.org/10.7303/syn18405991), Collection published 2019 via Synapse.
+
+- [Google AutoML](https://ai.googleblog.com/2019/05/an-end-to-end-automl-solution-for.html)
+- [Amazon SageMaker]()
+- [DataRobot](https://www.datarobot.com)
+- [H2O.ai]()
+- [TeaPot]()
 
 ## Authors Statement
 
