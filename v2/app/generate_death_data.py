@@ -94,10 +94,10 @@ def latest_data(df, window_size, last_visit, group_by_var, date_var, agg_dict, r
 def generate_data(step, training_dir, savefile_name):
     process = psutil.Process(os.getpid())
     mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+"::"+"Generate "+step+" data start::Mem Usage {:.2f} MB".format(mem), flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Generate "+step+" data start::Mem Usage {:.2f} MB".format(mem), flush = True)
     filepath = training_dir + 'person.csv'
     mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+"::"+"Reading person data::Mem Usage {:.2f} MB".format(mem), flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading person data::Mem Usage {:.2f} MB".format(mem), flush = True)
     df_person = pd.read_csv(filepath, usecols = ['year_of_birth',
                                                  'ethnicity_concept_id',
                                                  'person_id',
@@ -107,7 +107,7 @@ def generate_data(step, training_dir, savefile_name):
                                                  'gender_concept_id'], nrows=rows_limit)
 
     mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+"::"+"Reading visit_occurrence data::Mem Usage {:.2f} MB".format(mem), flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading visit_occurrence data::Mem Usage {:.2f} MB".format(mem), flush = True)
     filepath = filepath = training_dir + 'visit_occurrence.csv'
     df_visits = pd.read_csv(filepath, usecols=['person_id',
                                                'visit_start_date',
@@ -126,7 +126,7 @@ def generate_data(step, training_dir, savefile_name):
     filepath = concept_dir + 'all_concepts.csv'
 
     mem = process.memory_info()[0]/(1024**2)
-    print(str(pd.datetime.now())+"::"+"::"+"Reading all_concepts data::Mem Usage {:.2f} MB".format(mem), flush = True)
+    print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Reading all_concepts data::Mem Usage {:.2f} MB".format(mem), flush = True)
     df_concepts = pd.read_csv(filepath, usecols=['concept_name',
                                                  'concept_id',
                                                  'vocabulary_id'], nrows=rows_limit)
@@ -255,7 +255,7 @@ def generate_data(step, training_dir, savefile_name):
 
     if(step=='train'):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
-        df = pd.merge(df, last_visit, on=['person_id'], how='left')
+    df = pd.merge(df, last_visit, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
                 'condition_start_date': 'min',
@@ -293,7 +293,7 @@ def generate_data(step, training_dir, savefile_name):
 
     if(step=='train'):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
-        df = pd.merge(df, last_visit, on=['person_id'], how='left')
+    df = pd.merge(df, last_visit, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
                 'procedure_date': 'min'}
@@ -331,7 +331,7 @@ def generate_data(step, training_dir, savefile_name):
 
     if(step=='train'):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
-        df = pd.merge(df, last_visit, on=['person_id'], how='left')
+    df = pd.merge(df, last_visit, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
                 'drug_exposure_start_date': 'min',
@@ -371,7 +371,7 @@ def generate_data(step, training_dir, savefile_name):
 
     if(step=='train'):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
-        df = pd.merge(df, last_visit, on=['person_id'], how='left')
+    df = pd.merge(df, last_visit, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
                 'observation_date': 'min'}
@@ -390,9 +390,9 @@ def generate_data(step, training_dir, savefile_name):
     training_data = pd.merge(training_data, observation_data, on=['person_id'], how='left')
     del observation_data
 
-    if(step=='test'):
-        training_data = training_data.sort_values(by=['window_id'])
-        training_data.drop_duplicates(subset='person_id', keep='last', inplace=True)
+    # if(step=='test'):
+    #     training_data = training_data.sort_values(by=['window_id'])
+    #     training_data.drop_duplicates(subset='person_id', keep='last', inplace=True)
 
     # make a copy, preserve the original
     train = training_data.copy()
