@@ -1,5 +1,5 @@
-EHR DREAM Challenge - Patient Mortality Prediction by EHR_noobs team
-=================P
+# EHR DREAM Challenge - Patient Mortality Prediction by EHR_noobs team
+=================
 Romir Moza, Paul Perry, 
 Navya Network, Inc
 
