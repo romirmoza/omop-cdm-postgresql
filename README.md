@@ -1,11 +1,11 @@
 # EHR DREAM Challenge - Patient Mortality Prediction
 =================
-- by tema EHR_noobs
-- Romir Moza, Paul Perry, 
-- Navya Network, Inc
+- by team EHR_noobs
+- Romir Moza, Paul Perry
+- Navya Network, Inc.
 
 ## Summary:
-Gradient Boosting application for Mortality prediction.
+Gradient Boosting approach to Mortality prediction.
 
 ## Background/Introduction
 
@@ -18,7 +18,7 @@ What is the underlying methodology used (e.g., SVM or regression)?
 Where there any novel approaches taken in regards to
 -->
 
-As EHR_noobs, our motivation was to learn the workflow of a
+As team EHR_noobs, our motivation was to learn the workflow of a
 competition on [DREAM Challenge]() and to familiarize ourselves with
 structured EHR data.  Having joined the competition only towards the
 end of the final stage, our goal was to submit a model that could beat
@@ -71,8 +71,15 @@ This section should include a short summary and any insights gained during the a
 
 Don't forget to reference your specific challenge (e.g. NIEHS-NCATS-UNC DREAM Toxicogenetics Challenge (syn1761567)).
 -->
-Justin Guinney, [EHR DREAM Challenge - Patient Mortality Prediction](https://www.synapse.org/#!Synapse:syn18405991/wiki/589657), 
+- Justin Guinney, [EHR DREAM Challenge - Patient Mortality Prediction](https://www.synapse.org/#!Synapse:syn18405991/wiki/589657),
 [DOI: 10.7303/syn18405991](https://doi.org/10.7303/syn18405991), Collection published 2019 via Synapse.
+
+- [Google AutoML](https://ai.googleblog.com/2019/05/an-end-to-end-automl-solution-for.html)
+- [Amazon SageMaker]()
+- [DataRobot](https://www.datarobot.com)
+- [H2O.ai]()
+- [TeaPot]()
+
 
 ## Authors Statement
 <!-- Please list all author's contributions -->
