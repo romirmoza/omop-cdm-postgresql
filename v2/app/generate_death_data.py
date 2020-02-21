@@ -156,8 +156,13 @@ def generate_data(step, training_dir, savefile_name):
                                                   'death_datetime',
                                                   'death_type_concept_id'], nrows=rows_limit)
 
-        df = pd.merge(df_person_visits_race_concepts, df_death, on=['person_id'], how='inner')
-        del df_death
+        df = pd.merge(df_person_visits_race_concepts, df_death, on=['person_id'], how='left', indicator=True)
+        df_both = df[df._merge=='both']
+        df_left_only = df[df._merge=='left_only']
+        df_left_only = df_left_only.sample(n=30000, random_state=42)
+        df = pd.concat([df_both, df_left_only], ignore_index=True)
+        df.drop(columns=['_merge'], inplace=True)
+        del df_death, df_both, df_left_only
     else:
         df = df_person_visits_race_concepts
     del df_person_visits_race_concepts
