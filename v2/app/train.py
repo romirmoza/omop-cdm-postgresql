@@ -104,15 +104,16 @@ class OmopParser(object):
                               early_stopping_rounds=early_stop, verbose_eval=False,
                               xgb_model=xgb_model)
 
-                print("Best Score:%f, best iteration:%d, best ntree:%d" % 
-                      (xgb_model.best_score, xgb_model.best_iteration, xgb_model.best_ntree_limit))
+                #print("Best Score:%f, best iteration:%d, best ntree:%d" % 
+                #      (xgb_model.best_score, xgb_model.best_iteration, xgb_model.best_ntree_limit))
                 gc.collect()
         
 
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+\
               "Train AUC = "+str(evals_result['train']['auc'][xgb_model.best_ntree_limit])+\
               " Valid AUC = "+str(xgb_model.best_score)+\
-              ' at '+str(xgb_model.best_ntree_limit), flush = True)
+              " at "+str(xgb_model.best_ntree_limit)+\
+              " Evals Valid AUC = "+str(evals_result['valid']['auc'][xgb_model.best_ntree_limit]), flush = True)
 
         dump(xgb_model, self.modelfile)
 
