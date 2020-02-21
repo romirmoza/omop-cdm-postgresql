@@ -28,6 +28,7 @@ COPY ./infer.sh .
 # Copy Support files
 COPY ./generate_data.py .
 COPY ./generate_death_data.py .
+COPY ./generate_variable_lookback_data.py .
 COPY ./automl.py .
 COPY ./features.txt .
 RUN mkdir concept_codes_final
