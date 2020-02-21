@@ -31,7 +31,8 @@ class OmopParser(object):
         for c in train.columns[train.columns.str.startswith('days')]:
             train[c] = train[c].astype(int)
         train = reduce_mem_usage(train)
-
+        gc.collect()
+        
         from sklearn.preprocessing import LabelEncoder
         label_encoder = LabelEncoder()
         label_encoder = label_encoder.fit(train.race_concept_name)
