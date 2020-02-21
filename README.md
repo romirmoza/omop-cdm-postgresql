@@ -1,13 +1,22 @@
-# EHR DREAM Challenge - Patient Mortality Prediction by EHR_noobs team
+# EHR DREAM Challenge - Patient Mortality Prediction
 =================
-Romir Moza, Paul Perry, 
-Navya Network, Inc
+- by tema EHR_noobs
+- Romir Moza, Paul Perry, 
+- Navya Network, Inc
 
 ## Summary:
 Gradient Boosting application for Mortality prediction.
 
 ## Background/Introduction
+
+<!--
 (suggested limit 200 words)
+Please try to address the following points:
+
+What is the motivation for your approach? This will include any previous work and observations that you have made about the data to suggest your approach is a good one. Provide the reader with an intuition of how you approached the problem
+What is the underlying methodology used (e.g., SVM or regression)?
+Where there any novel approaches taken in regards to
+-->
 
 As EHR_noobs, our motivation was to learn the workflow of a
 competition on [DREAM Challenge]() and to familiarize ourselves with
@@ -31,13 +40,6 @@ submit the synthetic data to an AutoML service, learn the best feature
 selection and model, and develop and package this model for deployment
 to the site.
 
-<!--
-Please try to address the following points:
-
-What is the motivation for your approach? This will include any previous work and observations that you have made about the data to suggest your approach is a good one. Provide the reader with an intuition of how you approached the problem
-What is the underlying methodology used (e.g., SVM or regression)?
-Where there any novel approaches taken in regards to
--->
 
 ## Methods
 <!--
@@ -69,12 +71,12 @@ This section should include a short summary and any insights gained during the a
 
 Don't forget to reference your specific challenge (e.g. NIEHS-NCATS-UNC DREAM Toxicogenetics Challenge (syn1761567)).
 -->
-Justin Guinney, [EHR DREAM Challenge - Patient Mortality Prediction](https://www.synapse.org/#!Synapse:syn18405991/wiki/589657)
+Justin Guinney, [EHR DREAM Challenge - Patient Mortality Prediction](https://www.synapse.org/#!Synapse:syn18405991/wiki/589657), 
 [DOI: 10.7303/syn18405991](https://doi.org/10.7303/syn18405991), Collection published 2019 via Synapse.
 
 ## Authors Statement
 <!-- Please list all author's contributions -->
-Romir Moza: feature engineering, feature extraction, feature selection, dimensionality reduction, model selection, MLOps.
-Paul Perry: methodology, tool selection, data exploration, model selection.
+- Romir Moza: feature engineering, feature extraction, feature selection, dimensionality reduction, model selection, MLOps.
+- Paul Perry: methodology, tool selection, data exploration, model selection.
 
 
