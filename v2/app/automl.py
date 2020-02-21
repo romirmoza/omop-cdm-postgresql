@@ -52,7 +52,6 @@ def xgb_progressbar(rounds=1000):
 
 def cols_toint(df):
     '''cast days_ columns to int'''
-    df = df.fillna(0)
     df.old = df.old.astype(int)
     for c in df.columns[df.columns.str.startswith('days')]:
         df[c] = df[c].astype(int)

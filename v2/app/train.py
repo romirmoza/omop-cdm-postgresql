@@ -24,13 +24,15 @@ class OmopParser(object):
     def load_data(self, filename):
         mem = self.process.memory_info()[0]/(1024**2)
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+"Train load data start::Mem Usage {:.2f} MB".format(mem), flush = True)
+
         train = pd.read_csv(filename, compression='gzip', low_memory = False)
         train = train.fillna(0)
         train.old = train.old.astype(int)
         for c in train.columns[train.columns.str.startswith('days')]:
             train[c] = train[c].astype(int)
         train = reduce_mem_usage(train)
-
+        gc.collect()
+        
         from sklearn.preprocessing import LabelEncoder
         label_encoder = LabelEncoder()
         label_encoder = label_encoder.fit(train.race_concept_name)
@@ -103,15 +105,16 @@ class OmopParser(object):
                               early_stopping_rounds=early_stop, verbose_eval=False,
                               xgb_model=xgb_model)
 
-                print("Best Score:%f, best iteration:%d, best ntree:%d" % 
-                      (xgb_model.best_score, xgb_model.best_iteration, xgb_model.best_ntree_limit))
+                #print("Best Score:%f, best iteration:%d, best ntree:%d" % 
+                #      (xgb_model.best_score, xgb_model.best_iteration, xgb_model.best_ntree_limit))
                 gc.collect()
         
 
         print(str(pd.datetime.now())+"::"+os.path.realpath(__file__)+"::"+\
               "Train AUC = "+str(evals_result['train']['auc'][xgb_model.best_ntree_limit])+\
               " Valid AUC = "+str(xgb_model.best_score)+\
-              ' at '+str(xgb_model.best_ntree_limit), flush = True)
+              " at "+str(xgb_model.best_ntree_limit)+\
+              " Evals Valid AUC = "+str(evals_result['valid']['auc'][xgb_model.best_ntree_limit]), flush = True)
 
         dump(xgb_model, self.modelfile)
 

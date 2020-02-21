@@ -86,7 +86,7 @@ def window_data(df, window_size, window_start, group_by_var, date_var, agg_dict,
                 df_window['death_in_next_window'] = df_window.apply(lambda x: check_death_flag(x, window_size), axis=1)
             df_window['old'] = window_start.year - df_window.year_of_birth
 
-        # df_window[date_var] = (window_start + window_size) - df_window[date_var]
+        df_window[date_var] = (window_start + window_size) - df_window[date_var]
         df_agg = df_window.groupby(group_by_var).agg(agg_dict).rename(columns=rename_dict)
         apply_cols = df_window.groupby(group_by_var).apply(lambda x: apply_func(x))
         df_agg = df_agg.join(apply_cols)
@@ -194,6 +194,7 @@ def generate_data(step, training_dir, savefile_name):
                     'race_concept_id': 'max',
                     'gender_concept_id': 'max',
                     'race_concept_name': 'max',
+                    'visit_start_date': 'min',
                     'visit_occurrence_id': 'nunique',
                     'visit_concept_name': 'count',
                     'visit_duration': 'sum',
@@ -206,6 +207,7 @@ def generate_data(step, training_dir, savefile_name):
                     'race_concept_id': 'max',
                     'gender_concept_id': 'max',
                     'race_concept_name': 'max',
+                    'visit_start_date': 'min',
                     'visit_occurrence_id': 'nunique',
                     'visit_concept_name': 'count',
                     'visit_duration': 'sum',
@@ -260,6 +262,7 @@ def generate_data(step, training_dir, savefile_name):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
+                'condition_start_date': 'min',
                 'condition_status_concept_id': 'max'}
 
     rename_dict = {'condition_start_date': 'days_since_latest_condition'}
@@ -295,7 +298,8 @@ def generate_data(step, training_dir, savefile_name):
     if(step=='train'):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
 
-    agg_dict = {'person_id': 'max'}
+    agg_dict = {'person_id': 'max',
+                'procedure_date': 'min'}
 
     rename_dict = {'procedure_date': 'days_since_latest_procedure'}
 
@@ -332,6 +336,7 @@ def generate_data(step, training_dir, savefile_name):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
 
     agg_dict = {'person_id': 'max',
+                'drug_exposure_start_date': 'min',
                 'quantity': 'sum'}
 
     rename_dict = {'drug_exposure_start_date': 'days_since_latest_drug_exposure',
@@ -369,7 +374,8 @@ def generate_data(step, training_dir, savefile_name):
     if(step=='train'):
         df = pd.merge(df, death_data, on=['person_id'], how='left')
 
-    agg_dict = {'person_id': 'max'}
+    agg_dict = {'person_id': 'max',
+                'observation_date': 'min'}
 
     rename_dict = {'observation_date': 'days_since_latest_observation'}
 
