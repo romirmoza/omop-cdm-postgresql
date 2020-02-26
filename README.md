@@ -1,7 +1,7 @@
 # EHR DREAM Challenge - Patient Mortality Prediction
 =================
-- by tema EHR_noobs
-- Romir Moza, Paul Perry, 
+- by team EHR_noobs
+- Romir Moza, Paul Perry,
 - Navya Network, Inc
 
 ## Summary:
@@ -9,74 +9,45 @@ Gradient Boosting application for Mortality prediction.
 
 ## Background/Introduction
 
-<!--
-(suggested limit 200 words)
-Please try to address the following points:
+As EHR_noobs, our motivation was to learn the workflow of a competition on [DREAM Challenge]() and to familiarize ourselves with structured EHR data. Having joined the competition only towards the end of the final stage, our goal was to submit a model that could beat the baseline.
 
-What is the motivation for your approach? This will include any previous work and observations that you have made about the data to suggest your approach is a good one. Provide the reader with an intuition of how you approached the problem
-What is the underlying methodology used (e.g., SVM or regression)?
-Where there any novel approaches taken in regards to
--->
+In this competition workflow, submitted docker models will be run on premises at the medical sites hosting the challenge EHR data. Analysts are not allowed access to the real data, only synthetic data, and no data can be returned by the model as it runs with the real data. Given this workflow and our time constraints, our thought was that an [AutoML](https://en.wikipedia.org/wiki/Automated_machine_learning) approach, where the entire machine learning process is automated, would be the best way to build a model at the hosting site.
 
-As EHR_noobs, our motivation was to learn the workflow of a
-competition on [DREAM Challenge]() and to familiarize ourselves with
-structured EHR data.  Having joined the competition only towards the
-end of the final stage, our goal was to submit a model that could beat
-the baseline.
-
-In this competition workflow, submitted docker models will be run on
-premises at the medical sites hosting the challenge EHR
-data. Analysist are not allowed access to the real data, only
-synthetic data, and no data can be returned by the model as it runs
-with the real data. Given this workflow and our time constraints, our
-thought was that an
-[AutoML](https://en.wikipedia.org/wiki/Automated_machine_learning)
-approach, where the entire machine learning process is automated,
-would be the best way to build a model at the hosting site.
-
-The problem is that very few commercial AutoML systems are deployable
-to a site; most are hosted services. Our approach therefore was to
-submit the synthetic data to an AutoML service, learn the best feature
-selection and model, and develop and package this model for deployment
-to the site.
+The problem is that very few commercial AutoML systems are deployable to a site; most are hosted services. Our approach, therefore, was to submit the synthetic data to an AutoML service, learn the best feature selection and model, and develop and package this model for deployment to the site.
 
 
 ## Methods
-<!--
-(suggested limit 800 words)
 
-The methods should cover a full description of your methods so a reader can reproduce them. Please cover how you processed the data, if any data was imputed or manipulated in any way (e.g., you mapped data onto pathways or combined different datasets), the underlying algorithm, any modifications to the underlying method of importance, the incorporation of outside data, and the approach to predict submitted data.
-If you submitted multiple predictions, please specify which is the difference among them (e.g. only parameters tuning or different algorithms). If needed, you can decide to write one sub-paragraph for each submission.
--->
-- data imputation
-- feature engineering
-- feature selection
-- cross validation
-- model selection
-- hyperparameter optimization
-- final prediction
+- Data ingestion:
+We started out using PostgreSQL for data management but quickly realized it wasn't all that necessary. We settled on ingesting data from the csv files provided, directly into our python model. We load in the patient data provided to us in the person, visit_occurence, condition_occurence, procedure_occurence, observation, and drug_exposure files and merge in based on person ids.
+- Feature engineering:
+We aggregate the data for each person (visit, condition, procedure, drugs etc) and split the data for each person in time windows of 6 months. Our rationale was that data that is too far into the past is not meaningful to predicting mortality of the patient. We arrived at the window size of 6 months through extensive testing. Since most of these columns are categorical, we one hot encode them after aggregation. It's important to note though, that this method exasperates the problem of imbalanced classes (death, not death) in the data. For our target variable, "death_in_next_window" we lookup death date for persons who passed away within 6 months of the last time window.
+- Feature selection:
+Running our first models, we realized that the feature space we had was too big for a model to run in a reasonable amount of time. So, we did regression analysis using Extra Trees Classifier, Random Forest Classifier, and Alternating conditional expectations (ACE) algorithms to generate feature importances and only selecting the top 200.
+- Model selection:
+We used the autoML approach to find the models that performed the best on our training data. Tree based models seemed to do better than all the others and we eventually settled on XGBoost which performed the best.
+- Cross-validation:
+Since the target classes are highly imbalanced we use a Stratified shuffles split to split the training data.
+- Hyperparameter optimization:
+We then perform a randomized grid search on the hyperparameter space for our models.
 
 ## Conclusion/Discussion
 
-<!--
-(suggested limit 200 words)
-
-This section should include a short summary and any insights gained during the algorithm. For example, which dataset was most informative? You can include future directions. You may also add some discussion on the general performance of your methodology (if you wish) and if there were pitfalls, what are they?
--->
+The challenge was an interesting experience. First off, it gave us insight into the platform itself. This being our first challenge on synapse it took us some effort packaging the code for docker and running it on your servers.
+We understand now that domain knowledge and the OMOP hierarchy needs to be used for feature engineering and selection to be able to get anywhere with the prediction model.
 
 ## References
 
-<!--
-(suggested limit 10 references)
-
-Don't forget to reference your specific challenge (e.g. NIEHS-NCATS-UNC DREAM Toxicogenetics Challenge (syn1761567)).
--->
-Justin Guinney, [EHR DREAM Challenge - Patient Mortality Prediction](https://www.synapse.org/#!Synapse:syn18405991/wiki/589657), 
+- Justin Guinney, [EHR DREAM Challenge - Patient Mortality Prediction](https://www.synapse.org/#!Synapse:syn18405991/wiki/589657),
 [DOI: 10.7303/syn18405991](https://doi.org/10.7303/syn18405991), Collection published 2019 via Synapse.
 
+- [Google AutoML](https://ai.googleblog.com/2019/05/an-end-to-end-automl-solution-for.html)
+- [Amazon SageMaker]()
+- [DataRobot](https://www.datarobot.com)
+- [H2O.ai]()
+- [TeaPot]()
+
 ## Authors Statement
-<!-- Please list all author's contributions -->
+
 - Romir Moza: feature engineering, feature extraction, feature selection, dimensionality reduction, model selection, MLOps.
 - Paul Perry: methodology, tool selection, data exploration, model selection.
-
-
