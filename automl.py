@@ -37,17 +37,18 @@ def print_manifest():
     print('xgboost: '+xgb.__version__)
 
 
-def xgb_progressbar(rounds=1000):
+def xgb_progressbar(model=None, rounds=1000):
     """Progressbar for xgboost using tqdm library.
     https://programtalk.com/python-examples/tqdm/
     example: model = xgb.train(params, X_train, 1000, callbacks=[xgb_progressbar(100), ])
     """
     from tqdm.auto import tqdm
-    pbar = tqdm(total=rounds)
+    pbar = tqdm(desc='Score:  iter:', total=rounds)
 
-    def callback(_, ):
+    def callback(_, model=model):
+        pbar.set_postfix(score=model.best_score, iter=model.best_iteration)
         pbar.update(1)
-
+    
     return callback
 
 
